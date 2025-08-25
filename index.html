@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -7,14 +7,51 @@
   <meta name="theme-color" content="#121212" />
 
   <style>
+    /* ====== VARIABLES DE TEMA ====== */
+    :root {
+      --bg-color: #0f0f10;
+      --card-bg: #121212;
+      --card-border: #232323;
+      --text-color: #f1f1f1;
+      --text-light: #a9a9a9;
+      --input-bg: #171717;
+      --input-border: #242424;
+      --primary-btn-bg: #2b7cff;
+      --secondary-btn-bg: #202020;
+      --secondary-btn-border: #2d2d2d;
+      --border-soft: #1f1f1f;
+      --header-bg: #161616;
+      --accent-green: #66bb6a;
+      --accent-red: #ef5350;
+      --accent-blue: #4fc3f7;
+    }
+
+    [data-theme="light"] {
+      --bg-color: #f0f2f5;
+      --card-bg: #ffffff;
+      --card-border: #e0e0e0;
+      --text-color: #333333;
+      --text-light: #666666;
+      --input-bg: #f9f9f9;
+      --input-border: #e0e0e0;
+      --primary-btn-bg: #1e88e5;
+      --secondary-btn-bg: #e0e0e0;
+      --secondary-btn-border: #bdbdbd;
+      --border-soft: #e9e9e9;
+      --header-bg: #f5f5f5;
+      --accent-green: #2e7d32;
+      --accent-red: #c62828;
+      --accent-blue: #0277bd;
+    }
+
     /* ====== RESET & BASE ====== */
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
-      background: #0f0f10;
-      color: #f1f1f1;
+      background: var(--bg-color);
+      color: var(--text-color);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -28,18 +65,39 @@
       margin: 0;
       font-size: 22px;
       letter-spacing: .2px;
-      color: #fafafa;
+      color: var(--text-color);
+    }
+    
+    .theme-switcher {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 24px;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      line-height: 1;
     }
 
     /* ====== PANEL SUPERIOR ====== */
     .panel {
       width: 100%;
       max-width: 560px;
-      background: linear-gradient(180deg, #161616, #121212);
-      border: 1px solid #232323;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 14px;
-      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,.15);
+      transition: opacity 0.3s ease;
+    }
+
+    .panel.hidden {
+      opacity: 0;
+      height: 0;
+      padding: 0;
+      margin: 0;
+      border: none;
     }
 
     .metrics {
@@ -50,15 +108,15 @@
     }
 
     .metric {
-      background: #181818;
-      border: 1px solid #242424;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
       border-radius: 12px;
       padding: 10px 8px;
       text-align: center;
     }
     .metric .label {
       font-size: 12px;
-      color: #a9a9a9;
+      color: var(--text-light);
       margin-bottom: 6px;
       text-transform: uppercase;
       letter-spacing: .6px;
@@ -67,9 +125,9 @@
       font-weight: 700;
       font-size: clamp(16px, 4.3vw, 20px);
     }
-    .metric.ahorro .value { color: #4fc3f7; }
-    .metric.saldo  .value { color: #66bb6a; }
-    .metric.gastos .value { color: #ef5350; }
+    .metric.ahorro .value { color: var(--accent-blue); }
+    .metric.saldo  .value { color: var(--accent-green); }
+    .metric.gastos .value { color: var(--accent-red); }
 
     /* ====== MAIN FORM & ACTIONS ====== */
     .screen {
@@ -93,27 +151,30 @@
     .input-area input,
     .input-area select,
     .btn {
-      border: 1px solid #242424;
-      background: #171717;
-      color: #fff;
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
+      color: var(--text-color);
       border-radius: 12px;
       padding: 12px 12px;
       font-size: 16px;
       outline: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
     }
     .btn {
       cursor: pointer;
       font-weight: 600;
       transition: transform .06s ease, background .2s ease;
-      background: #2b7cff;
-      border-color: #2b7cff;
+      background: var(--primary-btn-bg);
+      border-color: var(--primary-btn-bg);
     }
     .btn:active { transform: translateY(1px); }
     .btn.secundario {
-      background: #202020;
-      border-color: #2d2d2d;
+      background: var(--secondary-btn-bg);
+      border-color: var(--secondary-btn-border);
     }
-    .btn.secundario:hover { background: #262626; }
+    .btn.secundario:hover { background: var(--secondary-btn-bg); }
 
     .actions {
       width: 100%;
@@ -153,9 +214,9 @@
       margin: 0;
       flex: 1;
       overflow-y: auto;
-      border: 1px solid #232323;
+      border: 1px solid var(--card-border);
       border-radius: 12px;
-      background: #131313;
+      background: var(--card-bg);
     }
     #mandado-screen #lista-mandado li,
     #mandado-historial-lista li,
@@ -165,7 +226,7 @@
       align-items: center;
       gap: 12px;
       padding: 10px 14px;
-      border-bottom: 1px solid #1f1f1f;
+      border-bottom: 1px solid var(--border-soft);
       font-size: 15px;
       cursor: pointer;
     }
@@ -178,12 +239,12 @@
     #mandado-historial-lista li .nombre,
     #mandado-detalle-lista li .nombre {
       flex: 1;
-      color: #ccc;
+      color: var(--text-light);
     }
     #mandado-screen #lista-mandado li .cantidad,
     #mandado-detalle-lista li .cantidad {
         font-size: 13px;
-        color: #999;
+        color: var(--text-light);
     }
     #mandado-screen #lista-mandado li .precio,
     #mandado-historial-lista li .precio,
@@ -215,18 +276,18 @@
       font-weight: bold;
       padding: 14px;
       border-radius: 12px;
-      background: #181818;
+      background: var(--input-bg);
     }
     #mandado-screen .total-container .valor,
-    #mandado-historial-screen .total-container .valor { color: #66bb6a; }
+    #mandado-historial-screen .total-container .valor { color: var(--accent-green); }
 
     /* ====== HISTORIAL & GRAFICO ====== */
     #historial {
       width: 100%;
       max-width: 560px;
       display: none;
-      background: #131313;
-      border: 1px solid #232323;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
       border-radius: 14px;
       margin-top: 10px;
     }
@@ -235,10 +296,10 @@
       justify-content: space-between;
       align-items: center;
       padding: 12px 14px;
-      border-bottom: 1px solid #232323;
+      border-bottom: 1px solid var(--card-border);
       font-weight: 700;
       font-size: 15px;
-      background: #161616;
+      background: var(--header-bg);
       border-top-left-radius: 14px;
       border-top-right-radius: 14px;
     }
@@ -253,10 +314,10 @@
         padding: 6px 10px;
         border-radius: 8px;
         cursor: pointer;
-        background: #202020;
+        background: var(--secondary-btn-bg);
     }
     .tab.active {
-        background: #2b7cff;
+        background: var(--primary-btn-bg);
         color: white;
     }
 
@@ -265,11 +326,11 @@
     }
     .semana, .mes {
       padding: 10px 14px 2px;
-      border-bottom: 1px dashed #232323;
+      border-bottom: 1px dashed var(--card-border);
     }
     .semana .rango, .mes .rango {
       font-size: 12px;
-      color: #b7b7b7;
+      color: var(--text-light);
       margin-bottom: 8px;
     }
     .registro {
@@ -277,13 +338,13 @@
       grid-template-columns: auto 1fr auto auto;
       gap: 6px;
       padding: 8px 0;
-      border-bottom: 1px solid #1f1f1f;
+      border-bottom: 1px solid var(--border-soft);
       font-size: 14px;
       align-items: center;
     }
     .registro:last-child { border-bottom: none; }
     .registro .tipo {
-      color: #e5e5e5;
+      color: var(--text-color);
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -293,7 +354,7 @@
       font-size: 1.2em;
     }
     .registro .fecha {
-      color: #9b9b9b;
+      color: var(--text-light);
       font-size: 12px;
       grid-column: 1 / -1;
       text-align: right;
@@ -305,7 +366,7 @@
     .registro .delete-btn {
       background: none;
       border: none;
-      color: #ef5350;
+      color: var(--accent-red);
       font-size: 18px;
       cursor: pointer;
       padding: 0;
@@ -315,17 +376,17 @@
     /* ====== GRAFICO CIRCULAR ====== */
     #chart-container {
         padding: 16px 14px;
-        background: #131313;
+        background: var(--card-bg);
         display: none;
         border-bottom-left-radius: 14px;
         border-bottom-right-radius: 14px;
-        border: 1px solid #232323;
+        border: 1px solid var(--card-border);
         border-top: none;
     }
     #chart-container h3 {
         margin: 0 0 10px;
         font-size: 16px;
-        color: #ddd;
+        color: var(--text-color);
     }
     #chart {
         width: 100%;
@@ -340,7 +401,7 @@
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-      background-color: #4CAF50;
+      background-color: var(--primary-btn-bg);
       color: white;
       padding: 12px 20px;
       border-radius: 8px;
@@ -368,8 +429,9 @@
 </head>
 <body>
   <h1>💰 Mi Control Financiero</h1>
+  <button id="theme-switcher" class="theme-switcher">☀️</button>
 
-  <section class="panel">
+  <section id="main-panel" class="panel">
     <div class="metrics">
       <div class="metric ahorro">
         <div class="label">Ahorro</div>
@@ -623,6 +685,7 @@
     const $chartContainer = document.getElementById('chart-container');
     const historialContentContainers = document.querySelectorAll('.historial-content');
     const $mainScreen = document.getElementById('main-screen');
+    const $mainPanel = document.getElementById('main-panel');
     const $mandadoScreen = document.getElementById('mandado-screen');
     const $mandadoCategoria = document.getElementById('mandado-categoria');
     const $mandadoProducto = document.getElementById('mandado-producto');
@@ -643,10 +706,11 @@
     const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista');
     const $detalleTitulo = document.getElementById('detalle-titulo');
     const $detalleTotal = document.getElementById('detalle-total');
+    const $themeSwitcher = document.getElementById('theme-switcher');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
-        $notificacion.style.backgroundColor = (tipo === 'exito') ? '#4CAF50' : '#F4436A';
+        $notificacion.style.backgroundColor = (tipo === 'exito') ? 'var(--primary-btn-bg)' : 'var(--accent-red)';
         $notificacion.style.display = "block";
         setTimeout(() => {
             $notificacion.style.display = "none";
@@ -845,7 +909,7 @@
                     legend: {
                         position: 'right',
                         labels: {
-                            color: '#e5e5e5'
+                            color: getComputedStyle(document.body).getPropertyValue('--text-light')
                         }
                     }
                 }
@@ -887,6 +951,13 @@
             s.classList.remove('active');
         });
         document.getElementById(id).classList.add('active');
+        
+        // Ocultar/mostrar el panel de saldos
+        if (id === 'main-screen') {
+            $mainPanel.classList.remove('hidden');
+        } else {
+            $mainPanel.classList.add('hidden');
+        }
     }
     function mostrarPantallaMandado() {
         mostrarPantalla('mandado-screen');
@@ -1102,7 +1173,22 @@
         });
     }
 
+    function toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        $themeSwitcher.textContent = newTheme === "dark" ? "☀️" : "🌙";
+    }
+
+    function applySavedTheme() {
+        const savedTheme = localStorage.getItem("theme") || "dark";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+        $themeSwitcher.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    }
+
     // Event Listeners
+    applySavedTheme();
     aplicarCortesPendientes();
     renderResumen();
     $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value)));
@@ -1119,6 +1205,7 @@
     $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
     $btnVolverHistorial.addEventListener('click', mostrarPantallaMandado);
     $btnVolverDetalle.addEventListener('click', mostrarHistorialMandados);
+    $themeSwitcher.addEventListener('click', toggleTheme);
   </script>
 </body>
 </html>
