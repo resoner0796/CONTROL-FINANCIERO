@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Sueldo y Gastos</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: #f1f1f1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #fff;
+      margin-bottom: 20px;
+    }
+
+    .resumen {
+      background: #2c2c2c;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .resumen div {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+
+    .formulario {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    input, select, button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: none;
+    }
+
+    input {
+      flex: 1;
+      background: #333;
+      color: #fff;
+    }
+
+    select {
+      background: #444;
+      color: #fff;
+    }
+
+    button {
+      background: #007bff;
+      color: #fff;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .lista-registros {
+      margin-top: 30px;
+      width: 100%;
+      max-width: 500px;
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .registro {
+      border-bottom: 1px solid #444;
+      padding: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .registro:last-child {
+      border-bottom: none;
+    }
+
+    .fecha {
+      font-size: 12px;
+      color: #aaa;
+      width: 100%;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mi Control Financiero</h1>
+  
+  <div class="resumen">
+    <div><strong>Saldo Total:</strong> $<span id="saldo">0</span></div>
+    <div><strong>Ahorro:</strong> $<span id="ahorro">0</span></div>
+    <div><strong>Gastos Totales:</strong> $<span id="gastos">0</span></div>
+  </div>
+
+  <div class="formulario">
+    <input type="number" id="monto" placeholder="Ingresa monto">
+    <select id="tipo">
+      <option value="Sueldo">Sueldo</option>
+      <option value="Ahorro">Ahorro</option>
+      <option value="Mandado">Mandado</option>
+      <option value="Gastos del hogar">Gastos del hogar</option>
+      <option value="Otros">Otros</option>
+    </select>
+    <button onclick="agregarRegistro()">Confirmar</button>
+  </div>
+
+  <div class="lista-registros" id="listaRegistros">
+    <h3>Historial de movimientos</h3>
+  </div>
+
+  <script>
+    let saldo = 0;
+    let ahorro = 0;
+    let gastos = 0;
+    let registros = [];
+    let ultimaCorte = null;
+
+    // Obtener último jueves
+    function obtenerUltimoJueves(fecha = new Date()) {
+      let d = new Date(fecha);
+      let day = d.getDay(); // 0 = domingo ... 4 = jueves
+      let diff = day >= 4 ? day - 4 : day + 3 + 1; 
+      d.setDate(d.getDate() - diff);
+      d.setHours(0,0,0,0);
+      return d;
+    }
+
+    // Verifica si ya pasó un nuevo jueves desde el último corte
+    function verificarCorte() {
+      const hoy = new Date();
+      const ultimoJueves = obtenerUltimoJueves(hoy);
+
+      if (!ultimaCorte || new Date(ultimaCorte).getTime() < ultimoJueves.getTime()) {
+        gastos = 0;
+        registros = [];
+        ultimaCorte = ultimoJueves;
+        guardarDatos();
+        cargarRegistros();
+        actualizarResumen();
+      }
+    }
+
+    // Cargar datos desde localStorage al iniciar
+    window.onload = function() {
+      const datosGuardados = localStorage.getItem("finanzas");
+      if (datosGuardados) {
+        const datos = JSON.parse(datosGuardados);
+        saldo = datos.saldo;
+        ahorro = datos.ahorro;
+        gastos = datos.gastos;
+        registros = datos.registros;
+        ultimaCorte = datos.ultimaCorte;
+      }
+      verificarCorte();
+      actualizarResumen();
+      cargarRegistros();
+    };
+
+    function actualizarResumen() {
+      document.getElementById("saldo").innerText = saldo.toFixed(2);
+      document.getElementById("ahorro").innerText = ahorro.toFixed(2);
+      document.getElementById("gastos").innerText = gastos.toFixed(2);
+      guardarDatos();
+    }
+
+    function guardarDatos() {
+      const datos = {
+        saldo,
+        ahorro,
+        gastos,
+        registros,
+        ultimaCorte
+      };
+      localStorage.setItem("finanzas", JSON.stringify(datos));
+    }
+
+    function cargarRegistros() {
+      const lista = document.getElementById("listaRegistros");
+      lista.innerHTML = "<h3>Historial de movimientos</h3>";
+      registros.forEach(r => {
+        const registro = document.createElement("div");
+        registro.classList.add("registro");
+        registro.innerHTML = `
+          <span>${r.tipo}</span><span>$${r.monto.toFixed(2)}</span>
+          <div class="fecha">${r.fecha}</div>
+        `;
+        lista.appendChild(registro);
+      });
+    }
+
+    function obtenerFecha(tipo) {
+      const ahora = new Date();
+      let dia = String(ahora.getDate()).padStart(2, "0");
+      let mes = String(ahora.getMonth() + 1).padStart(2, "0");
+      let anio = ahora.getFullYear();
+      let horas = String(ahora.getHours()).padStart(2, "0");
+      let minutos = String(ahora.getMinutes()).padStart(2, "0");
+
+      if (tipo === "Sueldo") {
+        return `${dia}/${mes}/${anio}`;
+      } else {
+        return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+      }
+    }
+
+    function agregarRegistro() {
+      const montoInput = document.getElementById("monto");
+      const tipo = document.getElementById("tipo").value;
+      let monto = parseFloat(montoInput.value);
+
+      if (isNaN(monto) || monto === 0) {
+        alert("Por favor ingresa un monto válido");
+        return;
+      }
+
+      if (tipo === "Sueldo") {
+        saldo += monto;
+      } else if (tipo === "Ahorro") {
+        if (monto < 0) {
+          ahorro += monto; 
+          saldo += monto;
+        } else {
+          ahorro += monto;
+          saldo -= monto;
+        }
+      } else {
+        gastos += monto;
+        saldo -= monto;
+      }
+
+      const fecha = obtenerFecha(tipo);
+      registros.push({ tipo, monto, fecha });
+      cargarRegistros();
+      montoInput.value = "";
+      actualizarResumen();
+    }
+
+    actualizarResumen();
+  </script>
+</body>
+</html>
