@@ -1682,7 +1682,9 @@
                 mostrarPantalla('mandado-historial-screen');
             } else if (currentScreen.id === 'deuda-detalle-screen') {
                 mostrarPantalla('deudas-screen');
-            } else {
+            } else if (currentScreen.id === 'deudas-screen') {
+                mostrarPantalla('main-screen');
+            } else if (currentScreen.id === 'mandado-screen') {
                 mostrarPantalla('main-screen');
             }
         });
