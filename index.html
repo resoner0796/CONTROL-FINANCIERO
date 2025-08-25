@@ -2,7 +2,7 @@
 <html lang="es" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mi Control Financiero</title>
   <meta name="theme-color" content="#121212" />
   <link rel="manifest" href="/manifest.json">
@@ -465,12 +465,6 @@
       font-size: 16px;
       color: var(--text-color);
     }
-    
-    .no-data-msg {
-        text-align: center;
-        color: var(--text-light);
-        margin: 20px 0;
-    }
 
     /* ====== Notificacion ====== */
     #notificacion {
@@ -644,7 +638,6 @@
         </div>
         <div id="line-chart-container" class="historial-content" style="display: none;">
             <h3>Tendencia de Gastos</h3>
-            <div id="line-chart-message" class="no-data-msg"></div>
             <canvas id="line-chart"></canvas>
         </div>
       </section>
@@ -763,7 +756,6 @@
     let mandadoTicket = { items: [], total: 0 };
     let editIndex = null;
     let currentDebtId = null;
-    let navigationHistory = ['main-screen'];
 
     const productosMandado = {
         "Frutas y Verduras": [
@@ -1072,7 +1064,7 @@
     }
 
     function obtenerIconoTipo(tipo) {
-        const gastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...state.customCategories];
+        const gastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...state.customCategories];
         if (tipo === "Sueldo") return "🟢";
         if (tipo === "Ahorro") return "🟡";
         if (gastos.includes(tipo)) return "🔴";
@@ -1195,21 +1187,6 @@
     
     function renderLineChart() {
         const gastos = state.registros.filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE");
-        
-        const lineChartMessage = document.getElementById('line-chart-message');
-        const lineChartCanvas = document.getElementById('line-chart');
-
-        if (gastos.length < 2) {
-            if (myLineChart) myLineChart.destroy();
-            lineChartMessage.textContent = "Se necesitan al menos dos registros para mostrar la tendencia.";
-            lineChartMessage.style.display = 'block';
-            lineChartCanvas.style.display = 'none';
-            return;
-        }
-
-        lineChartMessage.style.display = 'none';
-        lineChartCanvas.style.display = 'block';
-
         const gastosPorFecha = gastos.reduce((acc, curr) => {
             const date = new Date(curr.ts).toISOString().slice(0, 10);
             if (!acc[date]) acc[date] = 0;
@@ -1291,34 +1268,20 @@
         }
     }
 
+    // Funcionalidad de Mandado
     function mostrarPantalla(id) {
-        const activeScreen = document.querySelector('.screen.active');
-        if (activeScreen) {
-            activeScreen.classList.remove('active');
-        }
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+        });
         document.getElementById(id).classList.add('active');
-
-        const lastScreen = navigationHistory[navigationHistory.length - 1];
-        if (id !== lastScreen) {
-            navigationHistory.push(id);
-        }
         
+        // Ocultar/mostrar el panel de saldos
         if (id === 'main-screen') {
             $mainPanel.classList.remove('hidden');
-            navigationHistory = ['main-screen'];
         } else {
             $mainPanel.classList.add('hidden');
         }
     }
-    
-    function goBack() {
-        if (navigationHistory.length > 1) {
-            navigationHistory.pop();
-            const prevScreenId = navigationHistory[navigationHistory.length - 1];
-            mostrarPantalla(prevScreenId);
-        }
-    }
-
     function mostrarPantallaMandado() {
         mostrarPantalla('mandado-screen');
         limpiarFormularioMandado();
@@ -1681,19 +1644,15 @@
     renderResumen();
     $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value)));
     $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro($tipo.value, parseFloat($monto.value)); });
-    $btnHistorial.addEventListener("click", () => {
-        toggleHistorial();
-        // Cuando se abre el historial, se mantiene en la pila para poder volver
-        navigationHistory.push('historial');
-    });
+    $btnHistorial.addEventListener("click", toggleHistorial);
     $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     
     // Eventos de la nueva funcionalidad
-    $btnMandado.addEventListener('click', () => mostrarPantalla('mandado-screen'));
+    $btnMandado.addEventListener('click', mostrarPantallaMandado);
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
-    $btnHistorialMandado.addEventListener('click', () => mostrarPantalla('mandado-historial-screen'));
+    $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
     $themeSwitcher.addEventListener('click', toggleTheme);
     $addCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'flex');
     $cancelCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'none');
@@ -1710,12 +1669,25 @@
             mostrarNotificacion("❗ Categoría inválida o ya existe", 'error');
         }
     });
-    $addDebtBtn.addEventListener('click', () => mostrarPantalla('deudas-screen'));
+    $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
     $btnRegistrarPago.addEventListener('click', registrarPago);
 
     $btnVolver.forEach(btn => {
-        btn.addEventListener('click', goBack);
+        btn.addEventListener('click', (event) => {
+            const currentScreen = event.target.closest('.screen');
+            if (currentScreen.id === 'mandado-historial-screen') {
+                mostrarPantalla('mandado-screen');
+            } else if (currentScreen.id === 'mandado-detalle-screen') {
+                mostrarPantalla('mandado-historial-screen');
+            } else if (currentScreen.id === 'deuda-detalle-screen') {
+                mostrarPantalla('deudas-screen');
+            } else if (currentScreen.id === 'deudas-screen') {
+                mostrarPantalla('main-screen');
+            } else if (currentScreen.id === 'mandado-screen') {
+                mostrarPantalla('main-screen');
+            }
+        });
     });
 
   </script>
