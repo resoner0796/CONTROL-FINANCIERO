@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mi Control Financiero</title>
   <meta name="theme-color" content="#121212" />
+  <link rel="manifest" href="/manifest.json">
 
   <style>
     /* ====== VARIABLES DE TEMA ====== */
@@ -161,6 +162,16 @@
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
+    }
+    .input-area select {
+        padding-right: 30px;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down" style="color: %23a9a9a9;"><polyline points="6 9 12 15 18 9"></polyline></svg>');
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 18px;
+    }
+    [data-theme="light"] .input-area select {
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down" style="color: %23666666;"><polyline points="6 9 12 15 18 9"></polyline></svg>');
     }
     .btn {
       cursor: pointer;
@@ -1185,6 +1196,17 @@
         const savedTheme = localStorage.getItem("theme") || "dark";
         document.documentElement.setAttribute("data-theme", savedTheme);
         $themeSwitcher.textContent = savedTheme === "dark" ? "☀️" : "🌙";
+    }
+
+    // PWA REGISTRATION
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('Service Worker registrado con éxito:', registration);
+        }).catch(error => {
+          console.log('Fallo el registro del Service Worker:', error);
+        });
+      });
     }
 
     // Event Listeners
