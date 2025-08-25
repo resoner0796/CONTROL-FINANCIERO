@@ -177,6 +177,8 @@
     #mandado-detalle-lista li {
       display: flex;
       justify-content: space-between;
+      align-items: center;
+      gap: 12px;
       padding: 10px 14px;
       border-bottom: 1px solid #1f1f1f;
       font-size: 15px;
@@ -189,10 +191,33 @@
     }
     #mandado-screen #lista-mandado li .nombre,
     #mandado-historial-lista li .nombre,
-    #mandado-detalle-lista li .nombre { color: #ccc; }
+    #mandado-detalle-lista li .nombre {
+      flex: 1;
+      color: #ccc;
+    }
+    #mandado-screen #lista-mandado li .cantidad,
+    #mandado-detalle-lista li .cantidad {
+        font-size: 13px;
+        color: #999;
+    }
     #mandado-screen #lista-mandado li .precio,
     #mandado-historial-lista li .precio,
-    #mandado-detalle-lista li .precio { font-weight: 600; }
+    #mandado-detalle-lista li .precio {
+      font-weight: 600;
+    }
+    #mandado-screen #lista-mandado li .actions {
+      display: flex;
+      gap: 8px;
+      flex: none;
+      margin: 0;
+    }
+    #mandado-screen #lista-mandado li .actions .btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+    }
 
     #mandado-screen .total-container,
     #mandado-historial-screen .total-container {
@@ -438,10 +463,10 @@
           <input type="text" id="nombre-articulo" placeholder="Nombre del artículo" style="display: none;">
 
           <div class="grid-inputs">
-              <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800)" step="0.01" style="display: none;">
-              <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00)" step="0.01" style="display: none;">
+              <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" step="0.01" style="display: none;">
+              <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" step="0.01" style="display: none;">
           </div>
-          <button class="btn" id="btn-agregar-articulo" style="display: none;">➕</button>
+          <button class="btn" id="btn-agregar-articulo" style="display: none;">➕ Agregar</button>
       </div>
 
       <ul id="lista-mandado">
@@ -488,6 +513,7 @@
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
     let myChart;
     let mandadoTicket = { items: [], total: 0 };
+    let editIndex = null;
 
     const productosMandado = {
         "Frutas y Verduras": [
@@ -858,6 +884,7 @@
     }
     function limpiarFormularioMandado() {
         mandadoTicket = { items: [], total: 0 };
+        editIndex = null;
         renderMandadoList();
         $mandadoCategoria.value = '';
         $mandadoProducto.style.display = 'none';
@@ -865,6 +892,7 @@
         $mandadoPeso.style.display = 'none';
         $mandadoPrecio.style.display = 'none';
         $btnAgregarArticulo.style.display = 'none';
+        $btnAgregarArticulo.textContent = "➕ Agregar";
     }
 
     function actualizarProductosDropdown() {
@@ -897,6 +925,8 @@
         const categoria = $mandadoCategoria.value;
         let nombre = '';
         let monto = 0;
+        let cantidad = 0;
+        let unidad = '';
         
         if (categoria === 'Otros') {
             nombre = $nombreArticulo.value.trim();
@@ -917,6 +947,8 @@
                 return;
             }
             monto = peso * precio;
+            cantidad = peso;
+            unidad = "kg";
         } else {
             const precio = parseFloat($mandadoPrecio.value);
             if (isNaN(precio) || precio <= 0) {
@@ -924,28 +956,84 @@
                 return;
             }
             monto = precio;
+            cantidad = 1;
+            unidad = "pz";
+        }
+        
+        const articulo = { nombre, monto, cantidad, unidad, categoria };
+
+        if (editIndex !== null) {
+            // Modo edición
+            mandadoTicket.total -= mandadoTicket.items[editIndex].monto;
+            mandadoTicket.items[editIndex] = articulo;
+            mandadoTicket.total += articulo.monto;
+            editIndex = null;
+            $btnAgregarArticulo.textContent = "➕ Agregar";
+        } else {
+            // Modo agregar nuevo
+            mandadoTicket.items.push(articulo);
+            mandadoTicket.total += articulo.monto;
         }
 
-        mandadoTicket.items.push({ nombre, monto });
-        mandadoTicket.total += monto;
-
         renderMandadoList();
-        $nombreArticulo.value = '';
-        $mandadoPeso.value = '';
-        $mandadoPrecio.value = '';
         $mandadoCategoria.value = '';
         $mandadoProducto.style.display = 'none';
         $nombreArticulo.style.display = 'none';
         $mandadoPeso.style.display = 'none';
         $mandadoPrecio.style.display = 'none';
         $btnAgregarArticulo.style.display = 'none';
+        
+    }
+    
+    function eliminarArticuloDelTicket(index) {
+        if (index >= 0 && index < mandadoTicket.items.length) {
+            const item = mandadoTicket.items[index];
+            mandadoTicket.total -= item.monto;
+            mandadoTicket.items.splice(index, 1);
+            renderMandadoList();
+        }
+    }
+    
+    function editarArticuloDelTicket(index) {
+        const item = mandadoTicket.items[index];
+        if (!item) return;
+        
+        editIndex = index;
+        
+        $mandadoCategoria.value = item.categoria;
+        actualizarProductosDropdown();
+        
+        if (item.categoria === "Otros") {
+            $nombreArticulo.value = item.nombre;
+        } else {
+            $mandadoProducto.value = item.nombre;
+        }
+        
+        if (item.unidad === "kg") {
+            $mandadoPeso.value = item.cantidad;
+            $mandadoPrecio.value = (item.monto / item.cantidad).toFixed(2);
+        } else {
+            $mandadoPrecio.value = item.monto;
+        }
+        
+        $btnAgregarArticulo.textContent = "✅ Actualizar";
+        $mandadoPrecio.focus();
     }
 
     function renderMandadoList() {
         $listaMandado.innerHTML = '';
-        mandadoTicket.items.forEach(item => {
+        mandadoTicket.items.forEach((item, index) => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="precio">${fmt.format(item.monto)}</span>`;
+            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : item.cantidad;
+            li.innerHTML = `
+                <span class="nombre">${item.nombre}</span>
+                <span class="cantidad">${cantidadDisplay}</span>
+                <span class="precio">${fmt.format(item.monto)}</span>
+                <div class="actions">
+                    <button class="btn secundario" onclick="editarArticuloDelTicket(${index})">✏️</button>
+                    <button class="btn secundario" onclick="eliminarArticuloDelTicket(${index})">🗑️</button>
+                </div>
+            `;
             $listaMandado.appendChild(li);
         });
         $totalTicket.textContent = fmt.format(mandadoTicket.total);
@@ -999,7 +1087,8 @@
         $mandadoDetalleLista.innerHTML = '';
         ticket.items.forEach(item => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="precio">${fmt.format(item.monto)}</span>`;
+            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : item.cantidad;
+            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="cantidad">${cantidadDisplay}</span><span class="precio">${fmt.format(item.monto)}</span>`;
             $mandadoDetalleLista.appendChild(li);
         });
     }
