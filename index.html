@@ -245,8 +245,13 @@
     }
     
     @media (max-width: 400px) {
-      .input-area { grid-template-columns: 1fr; }
-      .btn { width: 100%; }
+      .input-area { 
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .input-area button {
+        width: 100%;
+      }
       .registro { grid-template-columns: 1fr 1fr auto auto; }
       .registro .fecha { grid-column: auto; text-align: left; margin-top: 4px; }
     }
@@ -273,12 +278,11 @@
   </section>
 
   <section class="input-area">
-    <input type="number" id="monto" inputmode="decimal" step="0.01" placeholder="Monto (ej. 2000, -200 solo en Ahorro)" />
+    <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar del Ahorro)" />
     <select id="tipo">
       <option value="Sueldo">Sueldo</option>
       <option value="Ahorro">Ahorro</option>
       <option value="Mandado">Mandado</option>
-      <option value="Gastos del hogar">Gastos del hogar</option>
       <option value="Efectivo">Efectivo</option>
       <option value="Telmex">Telmex</option>
       <option value="CFE">CFE</option>
@@ -357,6 +361,15 @@
 
     const state = (() => {
       const saved = JSON.parse(localStorage.getItem("finanzas") || "{}");
+      // Asignar un ID a registros viejos que no lo tienen
+      if (saved.registros) {
+        saved.registros = saved.registros.map(r => {
+            if (!r.id) {
+                r.id = r.ts;
+            }
+            return r;
+        });
+      }
       return Object.assign({ saldo:0, ahorro:0, gastos:0, registros:[], ultimaCorte:null }, saved);
     })();
 
@@ -374,7 +387,7 @@
       }
       let corte = new Date(state.ultimaCorte);
       while (inicioSemanaJueves(corte).getTime() < ultimoJuevesHoy.getTime()) {
-        state.registros.push({ tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", corte), ts:corte.getTime() });
+        state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", corte), ts:corte.getTime() });
         state.gastos = 0;
         corte.setDate(corte.getDate()+7);
       }
@@ -399,7 +412,7 @@
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
-        $notificacion.style.backgroundColor = (tipo === 'exito') ? '#4CAF50' : '#F44336';
+        $notificacion.style.backgroundColor = (tipo === 'exito') ? '#4CAF50' : '#F4436A';
         $notificacion.style.display = "block";
         setTimeout(() => {
             $notificacion.style.display = "none";
@@ -463,7 +476,10 @@
         }
 
         const index = state.registros.findIndex(r => r.id == id);
-        if (index === -1) return;
+        if (index === -1) {
+            mostrarNotificacion("❌ Registro no encontrado", 'error');
+            return;
+        }
         
         const registro = state.registros[index];
         const { tipo, monto } = registro;
@@ -487,11 +503,11 @@
         persist();
         renderResumen();
         renderHistorial();
-        mostrarNotificacion("🗑️ Registro eliminado", 'exito');
+        mostrarNotificacion("🗑️ Registro eliminado");
     }
 
     function obtenerIconoTipo(tipo) {
-        const gastos = ["Mandado", "Gastos del hogar", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE"];
+        const gastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE"];
         if (tipo === "Sueldo") return "🟢";
         if (tipo === "Ahorro") return "🟡";
         if (gastos.includes(tipo)) return "🔴";
@@ -571,7 +587,7 @@
 
     function renderChart() {
         const gastos = state.registros.filter(r => {
-            const tipoGastos = ["Mandado", "Gastos del hogar", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
+            const tipoGastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
             return tipoGastos.includes(r.tipo);
         });
         
