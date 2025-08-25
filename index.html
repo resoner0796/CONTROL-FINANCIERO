@@ -121,7 +121,7 @@
     .actions .btn { flex: 1; }
 
     /* ====== PANTALLA DE MANDADO ====== */
-    #mandado-screen {
+    #mandado-screen, #mandado-historial-screen, #mandado-detalle-screen {
       position: absolute;
       top: 0;
       left: 0;
@@ -136,10 +136,10 @@
       transform: translateX(100%);
       align-items: center;
     }
-    #mandado-screen.active {
+    .screen.active {
       transform: translateX(0);
     }
-    #mandado-screen header {
+    #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -150,7 +150,7 @@
       width: 100%;
       max-width: 560px;
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: 1fr;
       gap: 8px;
     }
     #mandado-screen .input-item .grid-inputs {
@@ -158,7 +158,9 @@
       grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
-    #mandado-screen #lista-mandado {
+    #mandado-screen #lista-mandado,
+    #mandado-historial-lista,
+    #mandado-detalle-lista {
       list-style: none;
       padding: 0;
       width: 100%;
@@ -170,20 +172,30 @@
       border-radius: 12px;
       background: #131313;
     }
-    #mandado-screen #lista-mandado li {
+    #mandado-screen #lista-mandado li,
+    #mandado-historial-lista li,
+    #mandado-detalle-lista li {
       display: flex;
       justify-content: space-between;
       padding: 10px 14px;
       border-bottom: 1px solid #1f1f1f;
       font-size: 15px;
+      cursor: pointer;
     }
-    #mandado-screen #lista-mandado li:last-child {
+    #mandado-screen #lista-mandado li:last-child,
+    #mandado-historial-lista li:last-child,
+    #mandado-detalle-lista li:last-child {
       border-bottom: none;
     }
-    #mandado-screen #lista-mandado li .nombre { color: #ccc; }
-    #mandado-screen #lista-mandado li .precio { font-weight: 600; }
+    #mandado-screen #lista-mandado li .nombre,
+    #mandado-historial-lista li .nombre,
+    #mandado-detalle-lista li .nombre { color: #ccc; }
+    #mandado-screen #lista-mandado li .precio,
+    #mandado-historial-lista li .precio,
+    #mandado-detalle-lista li .precio { font-weight: 600; }
 
-    #mandado-screen .total-container {
+    #mandado-screen .total-container,
+    #mandado-historial-screen .total-container {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -195,7 +207,8 @@
       border-radius: 12px;
       background: #181818;
     }
-    #mandado-screen .total-container .valor { color: #66bb6a; }
+    #mandado-screen .total-container .valor,
+    #mandado-historial-screen .total-container .valor { color: #66bb6a; }
 
     /* ====== HISTORIAL & GRAFICO ====== */
     #historial {
@@ -363,7 +376,7 @@
     </div>
   </section>
 
-  <div id="main-screen">
+  <div id="main-screen" class="screen active">
       <section class="input-area">
         <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar de Ahorro)" />
         <select id="tipo">
@@ -406,10 +419,10 @@
       </section>
   </div>
   
-  <section id="mandado-screen">
+  <section id="mandado-screen" class="screen">
       <header>
           <h2>Ticket del Mandado</h2>
-          <button class="btn secundario" id="btn-volver">Volver</button>
+          <button class="btn secundario" id="btn-volver-mandado">Volver</button>
       </header>
       
       <div class="input-item">
@@ -439,7 +452,30 @@
           <span class="valor" id="total-ticket">$0.00</span>
       </div>
 
+      <button class="btn secundario" id="btn-historial-mandado">🧾 Historial de mandados</button>
       <button class="btn" id="btn-guardar-ticket">✅ Guardar Ticket</button>
+  </section>
+
+  <section id="mandado-historial-screen" class="screen">
+    <header>
+      <h2>Historial de Mandados</h2>
+      <button class="btn secundario" id="btn-volver-historial">Volver</button>
+    </header>
+    <ul id="mandado-historial-lista">
+        </ul>
+  </section>
+
+  <section id="mandado-detalle-screen" class="screen">
+    <header>
+      <h2 id="detalle-titulo"></h2>
+      <button class="btn secundario" id="btn-volver-detalle">Volver</button>
+    </header>
+    <ul id="mandado-detalle-lista">
+        </ul>
+    <div class="total-container">
+        <span>Total del ticket:</span>
+        <span class="valor" id="detalle-total">$0.00</span>
+    </div>
   </section>
 
   <div id="notificacion" style="display: none;"></div>
@@ -510,7 +546,7 @@
             return r;
         });
       }
-      return Object.assign({ saldo:0, ahorro:0, gastos:0, registros:[], ultimaCorte:null }, saved);
+      return Object.assign({ saldo:0, ahorro:0, gastos:0, registros:[], mandadoTickets:[], ultimaCorte:null }, saved);
     })();
 
     function persist() {
@@ -561,7 +597,16 @@
     const $listaMandado = document.getElementById('lista-mandado');
     const $totalTicket = document.getElementById('total-ticket');
     const $btnGuardarTicket = document.getElementById('btn-guardar-ticket');
-    const $btnVolver = document.getElementById('btn-volver');
+    const $btnVolverMandado = document.getElementById('btn-volver-mandado');
+    const $btnHistorialMandado = document.getElementById('btn-historial-mandado');
+    const $mandadoHistorialScreen = document.getElementById('mandado-historial-screen');
+    const $btnVolverHistorial = document.getElementById('btn-volver-historial');
+    const $mandadoHistorialLista = document.getElementById('mandado-historial-lista');
+    const $mandadoDetalleScreen = document.getElementById('mandado-detalle-screen');
+    const $btnVolverDetalle = document.getElementById('btn-volver-detalle');
+    const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista');
+    const $detalleTitulo = document.getElementById('detalle-titulo');
+    const $detalleTotal = document.getElementById('detalle-total');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -597,7 +642,7 @@
       } else if (tipo === "Ahorro") {
         if (monto < 0) {
           state.ahorro += monto;
-          state.saldo -= monto; // Se corrige para que también afecte al saldo total
+          state.saldo += Math.abs(monto);
         } else {
           state.ahorro += monto;
           state.saldo -= monto;
@@ -633,7 +678,7 @@
         } else if (tipo === "Ahorro") {
             if (monto < 0) {
                 state.ahorro -= monto;
-                state.saldo += monto; // Invertimos la lógica para revertir la acción
+                state.saldo -= Math.abs(monto);
             } else {
                 state.ahorro -= monto;
                 state.saldo += monto;
@@ -801,14 +846,17 @@
     }
 
     // Funcionalidad de Mandado
-    function mostrarPantallaMandado() {
-        $mainScreen.style.transform = "translateX(-100%)";
-        $mandadoScreen.classList.add('active');
+    function mostrarPantalla(id) {
+        document.querySelectorAll('.screen').forEach(s => {
+            s.classList.remove('active');
+        });
+        document.getElementById(id).classList.add('active');
     }
-    function ocultarPantallaMandado() {
-        $mainScreen.style.transform = "translateX(0)";
-        $mandadoScreen.classList.remove('active');
-        // Limpiar el ticket al volver
+    function mostrarPantallaMandado() {
+        mostrarPantalla('mandado-screen');
+        limpiarFormularioMandado();
+    }
+    function limpiarFormularioMandado() {
         mandadoTicket = { items: [], total: 0 };
         renderMandadoList();
         $mandadoCategoria.value = '';
@@ -909,8 +957,51 @@
             return;
         }
 
+        // Se guarda el ticket completo en su propio historial
+        const now = new Date();
+        const ticketCompleto = {
+            id: now.getTime(),
+            fecha: fechaDisplay("Mandado", now),
+            total: mandadoTicket.total,
+            items: mandadoTicket.items
+        };
+        state.mandadoTickets.push(ticketCompleto);
+
+        // Se guarda el total del ticket en el historial principal
         agregarRegistro("Mandado", mandadoTicket.total);
-        ocultarPantallaMandado();
+
+        persist();
+        mostrarPantalla('main-screen');
+    }
+
+    function mostrarHistorialMandados() {
+        mostrarPantalla('mandado-historial-screen');
+        $mandadoHistorialLista.innerHTML = '';
+        state.mandadoTickets.sort((a, b) => b.id - a.id).forEach(ticket => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="nombre">Ticket del ${ticket.fecha}</span><span class="precio">${fmt.format(ticket.total)}</span>`;
+            li.dataset.id = ticket.id;
+            li.addEventListener('click', () => mostrarDetalleMandado(ticket.id));
+            $mandadoHistorialLista.appendChild(li);
+        });
+    }
+
+    function mostrarDetalleMandado(id) {
+        const ticket = state.mandadoTickets.find(t => t.id == id);
+        if (!ticket) {
+            mostrarNotificacion("Ticket no encontrado", "error");
+            return;
+        }
+
+        mostrarPantalla('mandado-detalle-screen');
+        $detalleTitulo.textContent = `Detalle del ticket (${ticket.fecha})`;
+        $detalleTotal.textContent = fmt.format(ticket.total);
+        $mandadoDetalleLista.innerHTML = '';
+        ticket.items.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="precio">${fmt.format(item.monto)}</span>`;
+            $mandadoDetalleLista.appendChild(li);
+        });
     }
 
     // Event Listeners
@@ -923,11 +1014,13 @@
     
     // Eventos de la nueva funcionalidad
     $btnMandado.addEventListener('click', mostrarPantallaMandado);
-    $btnVolver.addEventListener('click', ocultarPantallaMandado);
+    $btnVolverMandado.addEventListener('click', () => mostrarPantalla('main-screen'));
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
-    $mandadoProducto.addEventListener('change', () => $mandadoPrecio.focus());
+    $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
+    $btnVolverHistorial.addEventListener('click', mostrarPantallaMandado);
+    $btnVolverDetalle.addEventListener('click', mostrarHistorialMandados);
   </script>
 </body>
 </html>
