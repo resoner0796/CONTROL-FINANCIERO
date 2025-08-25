@@ -25,7 +25,6 @@
       --accent-green: #66bb6a;
       --accent-red: #ef5350;
       --accent-blue: #4fc3f7;
-      --accent-orange: #f7931a;
     }
 
     [data-theme="light"] {
@@ -44,7 +43,6 @@
       --accent-green: #2e7d32;
       --accent-red: #c62828;
       --accent-blue: #0277bd;
-      --accent-orange: #e65100;
     }
 
     /* ====== RESET & BASE ====== */
@@ -105,7 +103,7 @@
 
     .metrics {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 8px;
       align-items: stretch;
     }
@@ -131,7 +129,7 @@
     .metric.ahorro .value { color: var(--accent-blue); }
     .metric.saldo  .value { color: var(--accent-green); }
     .metric.gastos .value { color: var(--accent-red); }
-    .metric.deudas .value { color: var(--accent-orange); }
+    .metric.deudas .value { color: #f7931a; }
 
     /* ====== MAIN FORM & ACTIONS ====== */
     .screen {
@@ -199,7 +197,8 @@
     .actions .btn { flex: 1; }
 
     /* ====== PANTALLA DE MANDADO ====== */
-    .screen header {
+    #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header,
+    #deudas-screen header, #deuda-detalle-screen header {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -449,22 +448,6 @@
         max-width: 300px;
         margin: auto;
     }
-    
-    #line-chart-container {
-      padding: 16px 14px;
-      background: var(--card-bg);
-      display: none;
-      border-bottom-left-radius: 14px;
-      border-bottom-right-radius: 14px;
-      border: 1px solid var(--card-border);
-      border-top: none;
-    }
-
-    #line-chart-container h3 {
-      margin: 0 0 10px;
-      font-size: 16px;
-      color: var(--text-color);
-    }
 
     /* ====== Notificacion ====== */
     #notificacion {
@@ -646,7 +629,7 @@
   <section id="mandado-screen" class="screen">
       <header>
           <h2>Ticket del Mandado</h2>
-          <button class="btn secundario btn-volver">Volver</button>
+          <button class="btn secundario" id="btn-volver-mandado">Volver</button>
       </header>
       
       <div class="input-item">
@@ -683,7 +666,7 @@
   <section id="mandado-historial-screen" class="screen">
     <header>
       <h2>Historial de Mandados</h2>
-      <button class="btn secundario btn-volver">Volver</button>
+      <button class="btn secundario" id="btn-volver-historial">Volver</button>
     </header>
     <ul id="mandado-historial-lista">
         </ul>
@@ -692,7 +675,7 @@
   <section id="mandado-detalle-screen" class="screen">
     <header>
       <h2 id="detalle-titulo"></h2>
-      <button class="btn secundario btn-volver">Volver</button>
+      <button class="btn secundario" id="btn-volver-detalle">Volver</button>
     </header>
     <ul id="mandado-detalle-lista">
         </ul>
@@ -705,7 +688,7 @@
   <section id="deudas-screen" class="screen">
     <header>
         <h2>Gestionar Deudas</h2>
-        <button class="btn secundario btn-volver">Volver</button>
+        <button class="btn secundario" id="btn-volver-deudas">Volver</button>
     </header>
     <div class="input-item">
         <input type="text" id="deuda-nombre" placeholder="Nombre de la deuda" />
@@ -719,7 +702,7 @@
   <section id="deuda-detalle-screen" class="screen">
     <header>
         <h2 id="deuda-detalle-titulo"></h2>
-        <button class="btn secundario btn-volver">Volver</button>
+        <button class="btn secundario" id="btn-volver-deuda-detalle">Volver</button>
     </header>
     <div class="deuda-info">
         <span class="titulo" id="deuda-info-nombre"></span>
@@ -904,10 +887,13 @@
     const $listaMandado = document.getElementById('lista-mandado');
     const $totalTicket = document.getElementById('total-ticket');
     const $btnGuardarTicket = document.getElementById('btn-guardar-ticket');
+    const $btnVolverMandado = document.getElementById('btn-volver-mandado');
     const $btnHistorialMandado = document.getElementById('btn-historial-mandado');
     const $mandadoHistorialScreen = document.getElementById('mandado-historial-screen');
+    const $btnVolverHistorial = document.getElementById('btn-volver-historial');
     const $mandadoHistorialLista = document.getElementById('mandado-historial-lista');
     const $mandadoDetalleScreen = document.getElementById('mandado-detalle-screen');
+    const $btnVolverDetalle = document.getElementById('btn-volver-detalle');
     const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista');
     const $detalleTitulo = document.getElementById('detalle-titulo');
     const $detalleTotal = document.getElementById('detalle-total');
@@ -919,17 +905,18 @@
     const $saveCategoryBtn = document.getElementById('save-category-btn');
     const $addDebtBtn = document.getElementById('add-debt-btn');
     const $deudasScreen = document.getElementById('deudas-screen');
+    const $btnVolverDeudas = document.getElementById('btn-volver-deudas');
     const $deudaNombre = document.getElementById('deuda-nombre');
     const $deudaMontoInicial = document.getElementById('deuda-monto-inicial');
     const $btnAgregarDeuda = document.getElementById('btn-agregar-deuda');
     const $deudasLista = document.getElementById('deudas-lista');
     const $deudaDetalleScreen = document.getElementById('deuda-detalle-screen');
+    const $btnVolverDeudaDetalle = document.getElementById('btn-volver-deuda-detalle');
     const $deudaInfoNombre = document.getElementById('deuda-info-nombre');
     const $deudaInfoPendiente = document.getElementById('deuda-info-pendiente');
     const $deudaPagoMonto = document.getElementById('deuda-pago-monto');
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
     const $pagosLista = document.getElementById('pagos-lista');
-    const $btnVolver = document.querySelectorAll('.btn-volver');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -966,29 +953,6 @@
       $ahorro.textContent = fmt.format(state.ahorro);
       $gastos.textContent = fmt.format(state.gastos);
       $deudasTotal.textContent = fmt.format(calcularDeudasTotal());
-    }
-
-    function persist() {
-      state.deudasTotal = calcularDeudasTotal();
-      localStorage.setItem("finanzas", JSON.stringify(state));
-    }
-
-    function aplicarCortesPendientes() {
-      const hoy = new Date();
-      const ultimoJuevesHoy = inicioSemanaJueves(hoy);
-      if (!state.ultimaCorte) {
-        state.ultimaCorte = ultimoJuevesHoy.toISOString();
-        persist();
-        return;
-      }
-      let corte = new Date(state.ultimaCorte);
-      while (inicioSemanaJueves(corte).getTime() < ultimoJuevesHoy.getTime()) {
-        state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", corte), ts:corte.getTime() });
-        state.gastos = 0;
-        corte.setDate(corte.getDate()+7);
-      }
-      state.ultimaCorte = ultimoJuevesHoy.toISOString();
-      persist();
     }
 
     function agregarRegistro(tipo, monto, id = null) {
@@ -1649,10 +1613,13 @@
     
     // Eventos de la nueva funcionalidad
     $btnMandado.addEventListener('click', mostrarPantallaMandado);
+    $btnVolverMandado.addEventListener('click', () => mostrarPantalla('main-screen'));
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
     $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
+    $btnVolverHistorial.addEventListener('click', mostrarPantallaMandado);
+    $btnVolverDetalle.addEventListener('click', mostrarHistorialMandados);
     $themeSwitcher.addEventListener('click', toggleTheme);
     $addCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'flex');
     $cancelCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'none');
@@ -1670,23 +1637,10 @@
         }
     });
     $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
+    $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
+    $btnVolverDeudaDetalle.addEventListener('click', mostrarPantallaDeudas);
     $btnRegistrarPago.addEventListener('click', registrarPago);
-
-    $btnVolver.forEach(btn => {
-        btn.addEventListener('click', (event) => {
-            const currentScreen = event.target.closest('.screen');
-            if (currentScreen.id === 'mandado-historial-screen') {
-                mostrarPantalla('mandado-screen');
-            } else if (currentScreen.id === 'mandado-detalle-screen') {
-                mostrarPantalla('mandado-historial-screen');
-            } else if (currentScreen.id === 'deuda-detalle-screen') {
-                mostrarPantalla('deudas-screen');
-            } else {
-                mostrarPantalla('main-screen');
-            }
-        });
-    });
 
   </script>
 </body>
