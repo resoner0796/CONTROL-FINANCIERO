@@ -140,7 +140,7 @@
     }
     .registro {
       display: grid;
-      grid-template-columns: 1fr auto;
+      grid-template-columns: auto 1fr auto;
       gap: 6px;
       padding: 8px 0;
       border-bottom: 1px solid #1f1f1f;
@@ -150,12 +150,38 @@
     .registro .tipo {
       color: #e5e5e5;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+    }
+    .registro .tipo .icono {
+      margin-right: 6px;
+      font-size: 1.2em;
     }
     .registro .fecha {
       color: #9b9b9b;
       font-size: 12px;
       grid-column: 1 / -1;
       text-align: right;
+    }
+    .registro .monto {
+      justify-self: end;
+    }
+
+    /* ====== Notificacion ====== */
+    #notificacion {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 1000;
+      display: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      font-size: 15px;
+      font-weight: 600;
     }
 
     @media (max-width: 400px) {
@@ -184,7 +210,6 @@
     </div>
   </section>
 
-  <!-- Formulario -->
   <section class="input-area">
     <input type="number" id="monto" inputmode="decimal" step="0.01" placeholder="Monto (ej. 2000, -200 solo en Ahorro)" />
     <select id="tipo">
@@ -209,11 +234,12 @@
     <button class="btn secundario" id="btn-historial">📜 Consultar movimientos</button>
   </section>
 
-  <!-- Historial -->
   <section id="historial">
     <header>Historial por semana (Jue → Mié)</header>
     <div id="contenedorSemanas"></div>
   </section>
+
+  <div id="notificacion" style="display: none;">✅ Transacción registrada</div>
 
   <script>
     const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
@@ -283,6 +309,15 @@
     const $btnHistorial = document.getElementById("btn-historial");
     const $historial = document.getElementById("historial");
     const $contenedorSemanas = document.getElementById("contenedorSemanas");
+    const $notificacion = document.getElementById("notificacion");
+
+    function mostrarNotificacion(mensaje) {
+        $notificacion.textContent = mensaje;
+        $notificacion.style.display = "block";
+        setTimeout(() => {
+            $notificacion.style.display = "none";
+        }, 2000);
+    }
 
     function renderResumen() {
       $saldo.textContent  = fmt.format(state.saldo);
@@ -292,26 +327,53 @@
 
     function agregarRegistro() {
       const raw = $monto.value.trim();
-      if (!raw) return;
+      if (!raw) {
+        mostrarNotificacion("❗ Ingresa un monto");
+        return;
+      }
       const monto = parseFloat(raw);
-      if (isNaN(monto) || monto === 0) { alert("Monto inválido"); return; }
+      if (isNaN(monto) || monto === 0) {
+        mostrarNotificacion("❗ Monto inválido");
+        return;
+      }
       const tipo = $tipo.value;
+      const now = new Date();
+      const registro = {
+          tipo,
+          monto,
+          fecha: fechaDisplay(tipo, now),
+          ts: now.getTime()
+      };
 
       if (tipo === "Sueldo") {
         state.saldo += monto;
       } else if (tipo === "Ahorro") {
-        if (monto < 0) { state.ahorro += monto; state.saldo += monto; }
-        else { state.ahorro += monto; state.saldo -= monto; }
+        if (monto < 0) {
+          state.ahorro += monto;
+          state.saldo += monto;
+        } else {
+          state.ahorro += monto;
+          state.saldo -= monto;
+        }
       } else {
         state.gastos += monto;
         state.saldo -= monto;
       }
 
-      const now = new Date();
-      state.registros.push({ tipo, monto, fecha:fechaDisplay(tipo, now), ts:now.getTime() });
+      state.registros.push(registro);
       $monto.value = "";
+      $tipo.value = "Sueldo"; // Reseteamos el selector
       persist();
       renderResumen();
+      mostrarNotificacion("✅ Transacción registrada");
+    }
+
+    function obtenerIconoTipo(tipo) {
+        const gastos = ["Mandado", "Gastos del hogar", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE"];
+        if (tipo === "Sueldo") return "🟢";
+        if (tipo === "Ahorro") return "🟡";
+        if (gastos.includes(tipo)) return "🔴";
+        return "";
     }
 
     function agruparPorSemana() {
@@ -339,7 +401,8 @@
         g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
           const div = document.createElement("div");
           div.className = "registro";
-          div.innerHTML = `<div class="tipo">${r.tipo}</div><div>${fmt.format(r.monto)}</div><div class="fecha">${r.fecha}</div>`;
+          const icono = obtenerIconoTipo(r.tipo);
+          div.innerHTML = `<div class="tipo"><span class="icono">${icono}</span>${r.tipo}</div><div class="monto">${fmt.format(r.monto)}</div><div class="fecha">${r.fecha}</div>`;
           divSemana.appendChild(div);
         });
         $contenedorSemanas.appendChild(divSemana);
