@@ -121,24 +121,23 @@
     .actions .btn { flex: 1; }
 
     /* ====== PANTALLA DE MANDADO ====== */
-    #mandado-screen, #mandado-historial-screen, #mandado-detalle-screen {
+    .screen {
+      width: 100%;
+      height: 100%;
       position: absolute;
       top: 0;
       left: 0;
-      width: 100%;
-      height: 100%;
       background: #0f0f10;
       padding: 16px;
-      display: flex;
+      display: none; /* Oculta por defecto */
       flex-direction: column;
       gap: 16px;
-      transition: transform .3s ease;
-      transform: translateX(100%);
       align-items: center;
     }
     .screen.active {
-      transform: translateX(0);
+      display: flex; /* Muestra solo la pantalla activa */
     }
+
     #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header {
       width: 100%;
       max-width: 560px;
