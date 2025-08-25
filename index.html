@@ -72,13 +72,16 @@
     .metric.gastos .value { color: #ef5350; }
 
     /* ====== MAIN FORM & ACTIONS ====== */
-    #main-screen {
-      width: 100%;
-      max-width: 560px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 16px;
+    .screen {
+        width: 100%;
+        max-width: 560px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+    .screen.active {
+        display: flex;
     }
 
     .input-area {
@@ -121,23 +124,6 @@
     .actions .btn { flex: 1; }
 
     /* ====== PANTALLA DE MANDADO ====== */
-    .screen {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      top: 0;
-      left: 0;
-      background: #0f0f10;
-      padding: 16px;
-      display: none; /* Oculta por defecto */
-      flex-direction: column;
-      gap: 16px;
-      align-items: center;
-    }
-    .screen.active {
-      display: flex; /* Muestra solo la pantalla activa */
-    }
-
     #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header {
       width: 100%;
       max-width: 560px;
@@ -978,8 +964,10 @@
         $mandadoCategoria.value = '';
         $mandadoProducto.style.display = 'none';
         $nombreArticulo.style.display = 'none';
-        $mandadoPeso.style.display = 'none';
+        $mandadoPeso.value = '';
         $mandadoPrecio.value = '';
+        $mandadoPeso.style.display = 'none';
+        $mandadoPrecio.style.display = 'none';
         $btnAgregarArticulo.style.display = 'none';
     }
     
@@ -1043,7 +1031,6 @@
             return;
         }
 
-        // Se guarda el ticket completo en su propio historial
         const now = new Date();
         const ticketCompleto = {
             id: now.getTime(),
@@ -1053,10 +1040,8 @@
         };
         state.mandadoTickets.push(ticketCompleto);
 
-        // Se guarda el total del ticket en el historial principal
-        agregarRegistro("Mandado", mandadoTicket.total);
-
         persist();
+        mostrarNotificacion("✅ Ticket guardado en el historial");
         mostrarPantalla('main-screen');
     }
 
