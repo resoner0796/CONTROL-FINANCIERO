@@ -12,11 +12,9 @@
     html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
       background: #0f0f10;
       color: #f1f1f1;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -31,7 +29,7 @@
       color: #fafafa;
     }
 
-    /* ====== PANEL SUPERIOR (3 columnas) ====== */
+    /* ====== PANEL SUPERIOR ====== */
     .panel {
       width: 100%;
       max-width: 560px;
@@ -66,16 +64,12 @@
     .metric .value {
       font-weight: 700;
       font-size: clamp(16px, 4.3vw, 20px);
-      line-height: 1.25;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
-    .metric.ahorro .value { color: #4fc3f7; }  /* izquierda */
-    .metric.saldo  .value { color: #66bb6a; }  /* centro */
-    .metric.gastos .value { color: #ef5350; }  /* derecha */
+    .metric.ahorro .value { color: #4fc3f7; }
+    .metric.saldo  .value { color: #66bb6a; }
+    .metric.gastos .value { color: #ef5350; }
 
-    /* ====== FORM (mobile first) ====== */
+    /* ====== FORM ====== */
     .input-area {
       width: 100%;
       max-width: 560px;
@@ -95,11 +89,9 @@
       font-size: 16px;
       outline: none;
     }
-    .input-area input::placeholder { color: #8e8e8e; }
     .btn {
       cursor: pointer;
       font-weight: 600;
-      white-space: nowrap;
       transition: transform .06s ease, background .2s ease;
       background: #2b7cff;
       border-color: #2b7cff;
@@ -111,7 +103,6 @@
     }
     .btn.secundario:hover { background: #262626; }
 
-    /* Botones secundarios wrapper */
     .actions {
       width: 100%;
       max-width: 560px;
@@ -125,12 +116,11 @@
     #historial {
       width: 100%;
       max-width: 560px;
-      display: none; /* se muestra al pulsar el botón */
+      display: none;
       background: #131313;
       border: 1px solid #232323;
       border-radius: 14px;
       margin-top: 10px;
-      overflow: hidden;
     }
     #historial header {
       padding: 12px 14px;
@@ -168,7 +158,6 @@
       text-align: right;
     }
 
-    /* ====== RESPONSIVE ====== */
     @media (max-width: 400px) {
       .input-area { grid-template-columns: 1fr; }
       .btn { width: 100%; }
@@ -178,18 +167,17 @@
 <body>
   <h1>💰 Mi Control Financiero</h1>
 
-  <!-- Panel superior con 3 columnas: izquierda Ahorro, centro Saldo, derecha Gastos -->
-  <section class="panel" aria-label="Resumen">
+  <section class="panel">
     <div class="metrics">
-      <div class="metric ahorro" aria-live="polite">
+      <div class="metric ahorro">
         <div class="label">Ahorro</div>
         <div id="ahorro" class="value">$0.00</div>
       </div>
-      <div class="metric saldo" aria-live="polite">
+      <div class="metric saldo">
         <div class="label">Saldo total</div>
         <div id="saldo" class="value">$0.00</div>
       </div>
-      <div class="metric gastos" aria-live="polite">
+      <div class="metric gastos">
         <div class="label">Gastos</div>
         <div id="gastos" class="value">$0.00</div>
       </div>
@@ -197,13 +185,21 @@
   </section>
 
   <!-- Formulario -->
-  <section class="input-area" aria-label="Nuevo movimiento">
+  <section class="input-area">
     <input type="number" id="monto" inputmode="decimal" step="0.01" placeholder="Monto (ej. 2000, -200 solo en Ahorro)" />
     <select id="tipo">
       <option value="Sueldo">Sueldo</option>
       <option value="Ahorro">Ahorro</option>
       <option value="Mandado">Mandado</option>
       <option value="Gastos del hogar">Gastos del hogar</option>
+      <option value="Efectivo">Efectivo</option>
+      <option value="Telmex">Telmex</option>
+      <option value="CFE">CFE</option>
+      <option value="Tienda">Tienda</option>
+      <option value="Corning">Corning</option>
+      <option value="Didi">Didi</option>
+      <option value="iCloud">iCloud</option>
+      <option value="Coppel">Coppel</option>
       <option value="Otros">Otros</option>
     </select>
     <button class="btn" id="btn-confirmar">Confirmar</button>
@@ -213,44 +209,34 @@
     <button class="btn secundario" id="btn-historial">📜 Consultar movimientos</button>
   </section>
 
-  <!-- Historial por semana (aparece sólo al presionar el botón) -->
-  <section id="historial" aria-hidden="true">
+  <!-- Historial -->
+  <section id="historial">
     <header>Historial por semana (Jue → Mié)</header>
     <div id="contenedorSemanas"></div>
   </section>
 
   <script>
-    /* ================== UTILIDADES ================== */
-    const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 });
+    const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 
-    // Inicio de semana de corte (jueves 00:00:00) para una fecha dada
     function inicioSemanaJueves(fecha) {
       const d = new Date(fecha);
       d.setHours(0,0,0,0);
-      const day = d.getDay(); // 0 dom ... 4 jue
-      const diff = (day - 4 + 7) % 7; // días desde el último jueves
+      const day = d.getDay();
+      const diff = (day - 4 + 7) % 7;
       d.setDate(d.getDate() - diff);
       return d;
     }
-
-    // Fin (miércoles 23:59:59.999) desde un inicio de jueves
     function finSemanaDesdeInicio(inicio) {
       const end = new Date(inicio);
       end.setDate(end.getDate() + 6);
       end.setHours(23,59,59,999);
       return end;
     }
-
-    // Texto rango "Jue dd MMM yyyy — Mié dd MMM yyyy"
     function rangoSemanaTexto(inicio) {
       const fin = finSemanaDesdeInicio(inicio);
-      const si = `${String(inicio.getDate()).padStart(2,"0")} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()}`;
-      const sf = `${String(fin.getDate()).padStart(2,"0")} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
-      return `Semana: Jue ${si} — Mié ${sf}`;
+      return `Semana: Jue ${inicio.getDate()} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()} — Mié ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
     }
-
-    // Fecha display según tipo
     function fechaDisplay(tipo, dateObj = new Date()) {
       const dd = String(dateObj.getDate()).padStart(2,"0");
       const mm = String(dateObj.getMonth()+1).padStart(2,"0");
@@ -261,80 +247,33 @@
       return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
     }
 
-    // Intenta parsear fechas antiguas guardadas como "dd/mm/aaaa hh:mm" o "dd/mm/aaaa"
-    function parseCompat(fechaStr) {
-      if (!fechaStr || typeof fechaStr !== "string") return new Date();
-      const [diaMesAnio, horaMin] = fechaStr.split(" ");
-      const [d, m, y] = (diaMesAnio || "").split("/").map(n => parseInt(n,10));
-      if (!d || !m || !y) return new Date();
-      let h = 0, min = 0;
-      if (horaMin) {
-        const [hh, mm] = horaMin.split(":").map(n => parseInt(n,10));
-        h = isNaN(hh) ? 0 : hh;
-        min = isNaN(mm) ? 0 : mm;
-      }
-      const dt = new Date(y, (m-1), d, h, min, 0, 0);
-      return isNaN(dt.getTime()) ? new Date() : dt;
-    }
-
-    /* ================== ESTADO ================== */
     const state = (() => {
       const saved = JSON.parse(localStorage.getItem("finanzas") || "{}");
-      // Estado base
-      const base = {
-        saldo: 0,
-        ahorro: 0,
-        gastos: 0,
-        registros: [], // {tipo, monto, fecha, ts}
-        ultimaCorte: null // ISO string del jueves (00:00) más reciente procesado
-      };
-      const data = Object.assign(base, saved);
-
-      // Compatibilidad: añade ts si falta
-      data.registros = (data.registros || []).map(r => {
-        if (r.ts == null) {
-          const d = r.fecha ? parseCompat(r.fecha) : new Date();
-          r.ts = d.getTime();
-        }
-        return r;
-      });
-
-      return data;
+      return Object.assign({ saldo:0, ahorro:0, gastos:0, registros:[], ultimaCorte:null }, saved);
     })();
 
     function persist() {
       localStorage.setItem("finanzas", JSON.stringify(state));
     }
 
-    /* ================== CORTE SEMANAL (JUEVES) ================== */
     function aplicarCortesPendientes() {
       const hoy = new Date();
-      const ultimoJuevesHoy = inicioSemanaJueves(hoy); // jueves actual o más reciente
+      const ultimoJuevesHoy = inicioSemanaJueves(hoy);
       if (!state.ultimaCorte) {
         state.ultimaCorte = ultimoJuevesHoy.toISOString();
         persist();
         return;
       }
       let corte = new Date(state.ultimaCorte);
-
-      // Si hay uno o más jueves sin procesar, avanzamos en pasos de 7 días
       while (inicioSemanaJueves(corte).getTime() < ultimoJuevesHoy.getTime()) {
-        // realizar corte de la semana que termina el miércoles anterior al nuevo jueves
-        state.registros.push({
-          tipo: "CIERRE",
-          monto: 0,
-          fecha: fechaDisplay("Otros", corte), // marca de tiempo
-          ts: corte.getTime()
-        });
-        state.gastos = 0; // reinicia gastos del nuevo ciclo
-        corte = new Date(corte);
-        corte.setDate(corte.getDate() + 7); // siguiente jueves
+        state.registros.push({ tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", corte), ts:corte.getTime() });
+        state.gastos = 0;
+        corte.setDate(corte.getDate()+7);
       }
       state.ultimaCorte = ultimoJuevesHoy.toISOString();
       persist();
     }
 
-    /* ================== UI ================== */
     const $saldo = document.getElementById("saldo");
     const $ahorro = document.getElementById("ahorro");
     const $gastos = document.getElementById("gastos");
@@ -355,47 +294,27 @@
       const raw = $monto.value.trim();
       if (!raw) return;
       const monto = parseFloat(raw);
-      if (isNaN(monto) || monto === 0) {
-        alert("Ingresa un monto válido (ej. 2000). Nota: usa valores negativos SOLO en Ahorro para retirar.");
-        return;
-      }
+      if (isNaN(monto) || monto === 0) { alert("Monto inválido"); return; }
       const tipo = $tipo.value;
 
-      // Reglas de negocio
       if (tipo === "Sueldo") {
         state.saldo += monto;
       } else if (tipo === "Ahorro") {
-        if (monto < 0) {
-          // Retiro de ahorro
-          state.ahorro += monto;   // suma negativo => reduce ahorro
-          state.saldo  += monto;   // suma negativo => reduce saldo
-        } else {
-          // Aportación a ahorro
-          state.ahorro += monto;
-          state.saldo  -= monto;
-        }
+        if (monto < 0) { state.ahorro += monto; state.saldo += monto; }
+        else { state.ahorro += monto; state.saldo -= monto; }
       } else {
-        // Cualquier otro concepto cuenta como gasto (no afecta ahorro)
         state.gastos += monto;
-        state.saldo  -= monto;
+        state.saldo -= monto;
       }
 
       const now = new Date();
-      const registro = {
-        tipo,
-        monto,
-        fecha: fechaDisplay(tipo, now),
-        ts: now.getTime()
-      };
-      state.registros.push(registro);
-
+      state.registros.push({ tipo, monto, fecha:fechaDisplay(tipo, now), ts:now.getTime() });
       $monto.value = "";
       persist();
       renderResumen();
     }
 
     function agruparPorSemana() {
-      // Mapa: key = inicioSemanaISO -> {inicio: Date, items: []}
       const grupos = new Map();
       for (const r of state.registros) {
         const inicio = inicioSemanaJueves(r.ts);
@@ -403,69 +322,43 @@
         if (!grupos.has(key)) grupos.set(key, { inicio, items: [] });
         grupos.get(key).items.push(r);
       }
-      // Ordenar por inicio descendente
-      const ordenado = Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
-      // Dentro de cada grupo, ordenar por ts descendente
-      for (const g of ordenado) g.items.sort((a,b) => b.ts - a.ts);
-      return ordenado;
+      return Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
     }
 
     function renderHistorial() {
       $contenedorSemanas.innerHTML = "";
       const grupos = agruparPorSemana();
-      if (grupos.length === 0) {
-        $contenedorSemanas.innerHTML = `<div class="semana"><div class="rango">Sin movimientos aún</div></div>`;
-        return;
-      }
-      for (const grupo of grupos) {
+      for (const g of grupos) {
         const divSemana = document.createElement("div");
         divSemana.className = "semana";
         const rango = document.createElement("div");
         rango.className = "rango";
-        rango.textContent = rangoSemanaTexto(grupo.inicio);
+        rango.textContent = rangoSemanaTexto(g.inicio);
         divSemana.appendChild(rango);
 
-        for (const r of grupo.items) {
+        g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
           const div = document.createElement("div");
           div.className = "registro";
-          const izq = document.createElement("div");
-          izq.className = "tipo";
-          izq.textContent = r.tipo;
-          const der = document.createElement("div");
-          der.textContent = fmt.format(r.monto);
-          const fecha = document.createElement("div");
-          fecha.className = "fecha";
-          fecha.textContent = r.fecha;
-
-          div.appendChild(izq);
-          div.appendChild(der);
-          div.appendChild(fecha);
+          div.innerHTML = `<div class="tipo">${r.tipo}</div><div>${fmt.format(r.monto)}</div><div class="fecha">${r.fecha}</div>`;
           divSemana.appendChild(div);
-        }
-
+        });
         $contenedorSemanas.appendChild(divSemana);
       }
     }
 
     function toggleHistorial() {
-      const visible = $historial.style.display === "block";
-      if (visible) {
+      if ($historial.style.display === "block") {
         $historial.style.display = "none";
-        $historial.setAttribute("aria-hidden", "true");
       } else {
         renderHistorial();
         $historial.style.display = "block";
-        $historial.setAttribute("aria-hidden", "false");
       }
     }
 
-    /* ================== INIT ================== */
-    aplicarCortesPendientes(); // procesa cortes de jueves faltantes
+    aplicarCortesPendientes();
     renderResumen();
-
-    // Eventos
     $btnConfirmar.addEventListener("click", agregarRegistro);
-    $monto.addEventListener("keydown", (e) => { if (e.key === "Enter") agregarRegistro(); });
+    $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro(); });
     $btnHistorial.addEventListener("click", toggleHistorial);
   </script>
 </body>
