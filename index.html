@@ -127,7 +127,6 @@
       left: 0;
       width: 100%;
       height: 100%;
-      max-width: 560px;
       background: #0f0f10;
       padding: 16px;
       display: flex;
@@ -151,7 +150,12 @@
       width: 100%;
       max-width: 560px;
       display: grid;
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    #mandado-screen .input-item .grid-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
     #mandado-screen #lista-mandado {
@@ -172,6 +176,9 @@
       padding: 10px 14px;
       border-bottom: 1px solid #1f1f1f;
       font-size: 15px;
+    }
+    #mandado-screen #lista-mandado li:last-child {
+      border-bottom: none;
     }
     #mandado-screen #lista-mandado li .nombre { color: #ccc; }
     #mandado-screen #lista-mandado li .precio { font-weight: 600; }
@@ -322,7 +329,7 @@
       white-space: nowrap;
     }
     
-    @media (max-width: 400px) {
+    @media (max-width: 500px) {
       .input-area { 
         grid-template-columns: 1fr;
         gap: 8px;
@@ -332,7 +339,7 @@
       }
       .registro { grid-template-columns: 1fr 1fr auto auto; }
       .registro .fecha { grid-column: auto; text-align: left; margin-top: 4px; }
-      #mandado-screen .input-item { grid-template-columns: 1fr 1fr auto; }
+      #mandado-screen .input-item { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -358,7 +365,7 @@
 
   <div id="main-screen">
       <section class="input-area">
-        <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar del Ahorro)" />
+        <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar de Ahorro)" />
         <select id="tipo">
           <option value="Sueldo">Sueldo</option>
           <option value="Ahorro">Ahorro</option>
@@ -406,9 +413,22 @@
       </header>
       
       <div class="input-item">
-          <input type="text" id="articulo" placeholder="Nombre del artículo" />
-          <input type="number" id="precio-articulo" placeholder="Precio" />
-          <button class="btn" id="btn-agregar-articulo">➕</button>
+          <select id="mandado-categoria">
+              <option value="">Selecciona Categoría</option>
+              <option value="Frutas y Verduras">Frutas y Verduras</option>
+              <option value="Abarrotes">Abarrotes</option>
+              <option value="Higiene Personal">Higiene Personal</option>
+              <option value="Carnes">Carnes</option>
+              <option value="Otros">Otros</option>
+          </select>
+          <select id="mandado-producto" style="display: none;"></select>
+          <input type="text" id="nombre-articulo" placeholder="Nombre del artículo" style="display: none;">
+
+          <div class="grid-inputs">
+              <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800)" step="0.01" style="display: none;">
+              <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00)" step="0.01" style="display: none;">
+          </div>
+          <button class="btn" id="btn-agregar-articulo" style="display: none;">➕</button>
       </div>
 
       <ul id="lista-mandado">
@@ -432,6 +452,21 @@
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
     let myChart;
     let mandadoTicket = { items: [], total: 0 };
+
+    const productosMandado = {
+        "Frutas y Verduras": [
+            "Aguacate", "Ajo", "Apio", "Brócoli", "Calabaza", "Camote", "Cebolla", "Cebollín",
+            "Chayote", "Chile Habanero", "Chile Jalapeño", "Chile Poblano", "Cilantro", "Ciruela",
+            "Coco", "Durazno", "Ejotes", "Elotes", "Espinaca", "Fresas", "Germen de Soya", "Guayaba",
+            "Jamaica", "Lechuga", "Limón", "Mango", "Manzanas", "Melón", "Naranjas", "Nopales",
+            "Papa", "Papaya", "Pera", "Plátano", "Repollo", "Sandia", "Tamarindo", "Tomate", "Tuna",
+            "Uva", "Zacate de Limón", "Zanahoria"
+        ],
+        "Abarrotes": ["Aceite", "Ajo en polvo", "Arroz", "Arroz con leche", "Otros Abarrotes"],
+        "Higiene Personal": ["Shampoo", "Jabón", "Pasta dental", "Otros Higiene"],
+        "Carnes": ["Carne de res", "Pollo", "Pescado", "Otros Carnes"],
+        "Otros": ["Otros"]
+    };
 
     function inicioSemanaJueves(fecha) {
       const d = new Date(fecha);
@@ -517,8 +552,11 @@
     const historialContentContainers = document.querySelectorAll('.historial-content');
     const $mainScreen = document.getElementById('main-screen');
     const $mandadoScreen = document.getElementById('mandado-screen');
-    const $articulo = document.getElementById('articulo');
-    const $precioArticulo = document.getElementById('precio-articulo');
+    const $mandadoCategoria = document.getElementById('mandado-categoria');
+    const $mandadoProducto = document.getElementById('mandado-producto');
+    const $nombreArticulo = document.getElementById('nombre-articulo');
+    const $mandadoPeso = document.getElementById('mandado-peso');
+    const $mandadoPrecio = document.getElementById('mandado-precio');
     const $btnAgregarArticulo = document.getElementById('btn-agregar-articulo');
     const $listaMandado = document.getElementById('lista-mandado');
     const $totalTicket = document.getElementById('total-ticket');
@@ -559,7 +597,7 @@
       } else if (tipo === "Ahorro") {
         if (monto < 0) {
           state.ahorro += monto;
-          state.saldo += monto;
+          state.saldo -= monto; // Se corrige para que también afecte al saldo total
         } else {
           state.ahorro += monto;
           state.saldo -= monto;
@@ -595,7 +633,7 @@
         } else if (tipo === "Ahorro") {
             if (monto < 0) {
                 state.ahorro -= monto;
-                state.saldo -= monto;
+                state.saldo += monto; // Invertimos la lógica para revertir la acción
             } else {
                 state.ahorro -= monto;
                 state.saldo += monto;
@@ -766,7 +804,6 @@
     function mostrarPantallaMandado() {
         $mainScreen.style.transform = "translateX(-100%)";
         $mandadoScreen.classList.add('active');
-        $articulo.focus();
     }
     function ocultarPantallaMandado() {
         $mainScreen.style.transform = "translateX(0)";
@@ -774,32 +811,93 @@
         // Limpiar el ticket al volver
         mandadoTicket = { items: [], total: 0 };
         renderMandadoList();
-        $articulo.value = '';
-        $precioArticulo.value = '';
+        $mandadoCategoria.value = '';
+        $mandadoProducto.style.display = 'none';
+        $nombreArticulo.style.display = 'none';
+        $mandadoPeso.style.display = 'none';
+        $mandadoPrecio.style.display = 'none';
+        $btnAgregarArticulo.style.display = 'none';
     }
-    function agregarArticulo() {
-        const nombre = $articulo.value.trim();
-        const precio = parseFloat($precioArticulo.value);
 
-        if (!nombre || isNaN(precio) || precio <= 0) {
-            mostrarNotificacion("❗ Ingresa un nombre y precio válidos", 'error');
+    function actualizarProductosDropdown() {
+        const categoria = $mandadoCategoria.value;
+        const productos = productosMandado[categoria] || [];
+        $mandadoProducto.innerHTML = `<option value="">Selecciona Producto</option>`;
+        
+        if (categoria) {
+            productos.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p;
+                option.textContent = p;
+                $mandadoProducto.appendChild(option);
+            });
+            $mandadoProducto.style.display = (categoria === 'Otros') ? 'none' : 'block';
+            $nombreArticulo.style.display = (categoria === 'Otros') ? 'block' : 'none';
+            $mandadoPeso.style.display = (categoria === 'Frutas y Verduras') ? 'block' : 'none';
+            $mandadoPrecio.style.display = 'block';
+            $btnAgregarArticulo.style.display = 'block';
+        } else {
+            $mandadoProducto.style.display = 'none';
+            $nombreArticulo.style.display = 'none';
+            $mandadoPeso.style.display = 'none';
+            $mandadoPrecio.style.display = 'none';
+            $btnAgregarArticulo.style.display = 'none';
+        }
+    }
+    
+    function agregarArticulo() {
+        const categoria = $mandadoCategoria.value;
+        let nombre = '';
+        let monto = 0;
+        
+        if (categoria === 'Otros') {
+            nombre = $nombreArticulo.value.trim();
+        } else {
+            nombre = $mandadoProducto.value;
+        }
+
+        if (!nombre) {
+            mostrarNotificacion("❗ Selecciona un producto", 'error');
             return;
         }
 
-        mandadoTicket.items.push({ nombre, precio });
-        mandadoTicket.total += precio;
+        if (categoria === "Frutas y Verduras") {
+            const peso = parseFloat($mandadoPeso.value);
+            const precio = parseFloat($mandadoPrecio.value);
+            if (isNaN(peso) || isNaN(precio) || peso <= 0 || precio <= 0) {
+                mostrarNotificacion("❗ Ingresa peso y precio válidos", 'error');
+                return;
+            }
+            monto = peso * precio;
+        } else {
+            const precio = parseFloat($mandadoPrecio.value);
+            if (isNaN(precio) || precio <= 0) {
+                mostrarNotificacion("❗ Ingresa un precio válido", 'error');
+                return;
+            }
+            monto = precio;
+        }
+
+        mandadoTicket.items.push({ nombre, monto });
+        mandadoTicket.total += monto;
 
         renderMandadoList();
-        $articulo.value = '';
-        $precioArticulo.value = '';
-        $articulo.focus();
+        $nombreArticulo.value = '';
+        $mandadoPeso.value = '';
+        $mandadoPrecio.value = '';
+        $mandadoCategoria.value = '';
+        $mandadoProducto.style.display = 'none';
+        $nombreArticulo.style.display = 'none';
+        $mandadoPeso.style.display = 'none';
+        $mandadoPrecio.style.display = 'none';
+        $btnAgregarArticulo.style.display = 'none';
     }
 
     function renderMandadoList() {
         $listaMandado.innerHTML = '';
         mandadoTicket.items.forEach(item => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="precio">${fmt.format(item.precio)}</span>`;
+            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="precio">${fmt.format(item.monto)}</span>`;
             $listaMandado.appendChild(li);
         });
         $totalTicket.textContent = fmt.format(mandadoTicket.total);
@@ -826,11 +924,10 @@
     // Eventos de la nueva funcionalidad
     $btnMandado.addEventListener('click', mostrarPantallaMandado);
     $btnVolver.addEventListener('click', ocultarPantallaMandado);
+    $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
-    $articulo.addEventListener('keydown', e => { if (e.key === 'Enter') $precioArticulo.focus(); });
-    $precioArticulo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarArticulo(); });
     $btnGuardarTicket.addEventListener('click', guardarTicket);
-
+    $mandadoProducto.addEventListener('change', () => $mandadoPrecio.focus());
   </script>
 </body>
 </html>
