@@ -1,228 +1,472 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de Sueldo y Gastos</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Mi Control Financiero</title>
+  <meta name="theme-color" content="#121212" />
+
   <style>
+    /* ====== RESET & BASE ====== */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #121212;
-      color: #f0f0f0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: #0f0f10;
+      color: #f1f1f1;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      padding: 20px;
+      gap: 16px;
+      padding: 16px;
     }
+
     h1 {
-      margin-bottom: 20px;
-      color: #f5f5f5;
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: .2px;
+      color: #fafafa;
     }
+
+    /* ====== PANEL SUPERIOR (3 columnas) ====== */
     .panel {
       width: 100%;
-      max-width: 500px;
-      background: #1e1e1e;
+      max-width: 560px;
+      background: linear-gradient(180deg, #161616, #121212);
+      border: 1px solid #232323;
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .metric {
+      background: #181818;
+      border: 1px solid #242424;
       border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.6);
-      margin-bottom: 20px;
+      padding: 10px 8px;
       text-align: center;
     }
-    .panel h2 {
-      margin: 10px 0;
-      font-size: 18px;
+    .metric .label {
+      font-size: 12px;
+      color: #a9a9a9;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .6px;
     }
-    .saldo { color: #4caf50; font-size: 22px; }
-    .ahorro { color: #2196f3; font-size: 22px; }
-    .gastos { color: #f44336; font-size: 22px; }
+    .metric .value {
+      font-weight: 700;
+      font-size: clamp(16px, 4.3vw, 20px);
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .metric.ahorro .value { color: #4fc3f7; }  /* izquierda */
+    .metric.saldo  .value { color: #66bb6a; }  /* centro */
+    .metric.gastos .value { color: #ef5350; }  /* derecha */
 
+    /* ====== FORM (mobile first) ====== */
     .input-area {
+      width: 100%;
+      max-width: 560px;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .input-area input,
+    .input-area select,
+    .btn {
+      border: 1px solid #242424;
+      background: #171717;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 12px;
+      font-size: 16px;
+      outline: none;
+    }
+    .input-area input::placeholder { color: #8e8e8e; }
+    .btn {
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: transform .06s ease, background .2s ease;
+      background: #2b7cff;
+      border-color: #2b7cff;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn.secundario {
+      background: #202020;
+      border-color: #2d2d2d;
+    }
+    .btn.secundario:hover { background: #262626; }
+
+    /* Botones secundarios wrapper */
+    .actions {
+      width: 100%;
+      max-width: 560px;
       display: flex;
       gap: 10px;
-      width: 100%;
-      max-width: 500px;
-      margin-bottom: 20px;
+      margin-top: 4px;
     }
-    .input-area input, .input-area select {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-    .input-area button {
-      background: #4caf50;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      color: white;
-      transition: background 0.3s;
-    }
-    .input-area button:hover { background: #43a047; }
+    .actions .btn { flex: 1; }
 
-    .actions {
-      margin-top: 10px;
-    }
-    .actions button {
-      background: #2196f3;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 16px;
-      color: white;
-      transition: background 0.3s;
-    }
-    .actions button:hover { background: #1976d2; }
-
+    /* ====== HISTORIAL ====== */
     #historial {
       width: 100%;
-      max-width: 500px;
-      background: #1e1e1e;
-      border-radius: 12px;
-      padding: 15px;
-      margin-top: 20px;
-      display: none;
-      max-height: 300px;
-      overflow-y: auto;
+      max-width: 560px;
+      display: none; /* se muestra al pulsar el botón */
+      background: #131313;
+      border: 1px solid #232323;
+      border-radius: 14px;
+      margin-top: 10px;
+      overflow: hidden;
     }
-    #historial h3 {
-      margin-bottom: 10px;
-      color: #f5f5f5;
+    #historial header {
+      padding: 12px 14px;
+      border-bottom: 1px solid #232323;
+      font-weight: 700;
+      font-size: 15px;
+      background: #161616;
+    }
+    .semana {
+      padding: 10px 14px 2px;
+      border-bottom: 1px dashed #232323;
+    }
+    .semana .rango {
+      font-size: 12px;
+      color: #b7b7b7;
+      margin-bottom: 8px;
     }
     .registro {
-      border-bottom: 1px solid #333;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 6px;
       padding: 8px 0;
+      border-bottom: 1px solid #1f1f1f;
       font-size: 14px;
     }
-    .registro span {
-      display: block;
+    .registro:last-child { border-bottom: none; }
+    .registro .tipo {
+      color: #e5e5e5;
+      font-weight: 600;
+    }
+    .registro .fecha {
+      color: #9b9b9b;
+      font-size: 12px;
+      grid-column: 1 / -1;
+      text-align: right;
+    }
+
+    /* ====== RESPONSIVE ====== */
+    @media (max-width: 400px) {
+      .input-area { grid-template-columns: 1fr; }
+      .btn { width: 100%; }
     }
   </style>
 </head>
 <body>
   <h1>💰 Mi Control Financiero</h1>
 
-  <div class="panel">
-    <h2>Saldo Total: <span id="saldo" class="saldo">$0</span></h2>
-    <h2>Monto Ahorrado: <span id="ahorro" class="ahorro">$0</span></h2>
-    <h2>Gastos Totales: <span id="gastos" class="gastos">$0</span></h2>
-  </div>
+  <!-- Panel superior con 3 columnas: izquierda Ahorro, centro Saldo, derecha Gastos -->
+  <section class="panel" aria-label="Resumen">
+    <div class="metrics">
+      <div class="metric ahorro" aria-live="polite">
+        <div class="label">Ahorro</div>
+        <div id="ahorro" class="value">$0.00</div>
+      </div>
+      <div class="metric saldo" aria-live="polite">
+        <div class="label">Saldo total</div>
+        <div id="saldo" class="value">$0.00</div>
+      </div>
+      <div class="metric gastos" aria-live="polite">
+        <div class="label">Gastos</div>
+        <div id="gastos" class="value">$0.00</div>
+      </div>
+    </div>
+  </section>
 
-  <div class="input-area">
-    <input type="number" id="monto" placeholder="Ingresa monto...">
+  <!-- Formulario -->
+  <section class="input-area" aria-label="Nuevo movimiento">
+    <input type="number" id="monto" inputmode="decimal" step="0.01" placeholder="Monto (ej. 2000, -200 solo en Ahorro)" />
     <select id="tipo">
-      <option value="sueldo">Sueldo</option>
-      <option value="ahorro">Ahorro</option>
-      <option value="mandado">Mandado</option>
-      <option value="hogar">Gastos del hogar</option>
-      <option value="otros">Otros</option>
+      <option value="Sueldo">Sueldo</option>
+      <option value="Ahorro">Ahorro</option>
+      <option value="Mandado">Mandado</option>
+      <option value="Gastos del hogar">Gastos del hogar</option>
+      <option value="Otros">Otros</option>
     </select>
-    <button onclick="agregarRegistro()">Confirmar</button>
-  </div>
+    <button class="btn" id="btn-confirmar">Confirmar</button>
+  </section>
 
-  <div class="actions">
-    <button onclick="toggleHistorial()">📜 Consultar movimientos</button>
-  </div>
+  <section class="actions">
+    <button class="btn secundario" id="btn-historial">📜 Consultar movimientos</button>
+  </section>
 
-  <div id="historial">
-    <h3>Historial por Semana</h3>
-    <div id="listaHistorial"></div>
-  </div>
+  <!-- Historial por semana (aparece sólo al presionar el botón) -->
+  <section id="historial" aria-hidden="true">
+    <header>Historial por semana (Jue → Mié)</header>
+    <div id="contenedorSemanas"></div>
+  </section>
 
   <script>
-    let data = JSON.parse(localStorage.getItem("finanzas")) || {
-      saldo: 0,
-      ahorro: 0,
-      gastos: 0,
-      registros: [],
-      ultimaSemana: null
-    };
+    /* ================== UTILIDADES ================== */
+    const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 2 });
+    const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
 
-    function formatear(num) {
-      return "$" + num.toLocaleString("es-MX");
-    }
-
-    function actualizarUI() {
-      document.getElementById("saldo").textContent = formatear(data.saldo);
-      document.getElementById("ahorro").textContent = formatear(data.ahorro);
-      document.getElementById("gastos").textContent = formatear(data.gastos);
-      localStorage.setItem("finanzas", JSON.stringify(data));
-    }
-
-    function obtenerSemana(fecha) {
+    // Inicio de semana de corte (jueves 00:00:00) para una fecha dada
+    function inicioSemanaJueves(fecha) {
       const d = new Date(fecha);
-      const oneJan = new Date(d.getFullYear(),0,1);
-      const numberOfDays = Math.floor((d - oneJan) / (24*60*60*1000));
-      return Math.ceil((d.getDay() + 1 + numberOfDays) / 7);
+      d.setHours(0,0,0,0);
+      const day = d.getDay(); // 0 dom ... 4 jue
+      const diff = (day - 4 + 7) % 7; // días desde el último jueves
+      d.setDate(d.getDate() - diff);
+      return d;
     }
 
-    function verificarCorte() {
+    // Fin (miércoles 23:59:59.999) desde un inicio de jueves
+    function finSemanaDesdeInicio(inicio) {
+      const end = new Date(inicio);
+      end.setDate(end.getDate() + 6);
+      end.setHours(23,59,59,999);
+      return end;
+    }
+
+    // Texto rango "Jue dd MMM yyyy — Mié dd MMM yyyy"
+    function rangoSemanaTexto(inicio) {
+      const fin = finSemanaDesdeInicio(inicio);
+      const si = `${String(inicio.getDate()).padStart(2,"0")} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()}`;
+      const sf = `${String(fin.getDate()).padStart(2,"0")} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
+      return `Semana: Jue ${si} — Mié ${sf}`;
+    }
+
+    // Fecha display según tipo
+    function fechaDisplay(tipo, dateObj = new Date()) {
+      const dd = String(dateObj.getDate()).padStart(2,"0");
+      const mm = String(dateObj.getMonth()+1).padStart(2,"0");
+      const yyyy = dateObj.getFullYear();
+      if (tipo === "Sueldo") return `${dd}/${mm}/${yyyy}`;
+      const hh = String(dateObj.getHours()).padStart(2,"0");
+      const min = String(dateObj.getMinutes()).padStart(2,"0");
+      return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+
+    // Intenta parsear fechas antiguas guardadas como "dd/mm/aaaa hh:mm" o "dd/mm/aaaa"
+    function parseCompat(fechaStr) {
+      if (!fechaStr || typeof fechaStr !== "string") return new Date();
+      const [diaMesAnio, horaMin] = fechaStr.split(" ");
+      const [d, m, y] = (diaMesAnio || "").split("/").map(n => parseInt(n,10));
+      if (!d || !m || !y) return new Date();
+      let h = 0, min = 0;
+      if (horaMin) {
+        const [hh, mm] = horaMin.split(":").map(n => parseInt(n,10));
+        h = isNaN(hh) ? 0 : hh;
+        min = isNaN(mm) ? 0 : mm;
+      }
+      const dt = new Date(y, (m-1), d, h, min, 0, 0);
+      return isNaN(dt.getTime()) ? new Date() : dt;
+    }
+
+    /* ================== ESTADO ================== */
+    const state = (() => {
+      const saved = JSON.parse(localStorage.getItem("finanzas") || "{}");
+      // Estado base
+      const base = {
+        saldo: 0,
+        ahorro: 0,
+        gastos: 0,
+        registros: [], // {tipo, monto, fecha, ts}
+        ultimaCorte: null // ISO string del jueves (00:00) más reciente procesado
+      };
+      const data = Object.assign(base, saved);
+
+      // Compatibilidad: añade ts si falta
+      data.registros = (data.registros || []).map(r => {
+        if (r.ts == null) {
+          const d = r.fecha ? parseCompat(r.fecha) : new Date();
+          r.ts = d.getTime();
+        }
+        return r;
+      });
+
+      return data;
+    })();
+
+    function persist() {
+      localStorage.setItem("finanzas", JSON.stringify(state));
+    }
+
+    /* ================== CORTE SEMANAL (JUEVES) ================== */
+    function aplicarCortesPendientes() {
       const hoy = new Date();
-      const semanaActual = obtenerSemana(hoy);
-      if (data.ultimaSemana && semanaActual !== data.ultimaSemana && hoy.getDay() === 4) { 
-        data.registros.push({
+      const ultimoJuevesHoy = inicioSemanaJueves(hoy); // jueves actual o más reciente
+      if (!state.ultimaCorte) {
+        state.ultimaCorte = ultimoJuevesHoy.toISOString();
+        persist();
+        return;
+      }
+      let corte = new Date(state.ultimaCorte);
+
+      // Si hay uno o más jueves sin procesar, avanzamos en pasos de 7 días
+      while (inicioSemanaJueves(corte).getTime() < ultimoJuevesHoy.getTime()) {
+        // realizar corte de la semana que termina el miércoles anterior al nuevo jueves
+        state.registros.push({
           tipo: "CIERRE",
           monto: 0,
-          fecha: hoy.toLocaleString(),
-          detalle: "Cierre semanal automático"
+          fecha: fechaDisplay("Otros", corte), // marca de tiempo
+          ts: corte.getTime()
         });
-        data.gastos = 0;
+        state.gastos = 0; // reinicia gastos del nuevo ciclo
+        corte = new Date(corte);
+        corte.setDate(corte.getDate() + 7); // siguiente jueves
       }
-      data.ultimaSemana = semanaActual;
-      actualizarUI();
+      state.ultimaCorte = ultimoJuevesHoy.toISOString();
+      persist();
+    }
+
+    /* ================== UI ================== */
+    const $saldo = document.getElementById("saldo");
+    const $ahorro = document.getElementById("ahorro");
+    const $gastos = document.getElementById("gastos");
+    const $monto = document.getElementById("monto");
+    const $tipo  = document.getElementById("tipo");
+    const $btnConfirmar = document.getElementById("btn-confirmar");
+    const $btnHistorial = document.getElementById("btn-historial");
+    const $historial = document.getElementById("historial");
+    const $contenedorSemanas = document.getElementById("contenedorSemanas");
+
+    function renderResumen() {
+      $saldo.textContent  = fmt.format(state.saldo);
+      $ahorro.textContent = fmt.format(state.ahorro);
+      $gastos.textContent = fmt.format(state.gastos);
     }
 
     function agregarRegistro() {
-      const montoInput = document.getElementById("monto").value;
-      const tipo = document.getElementById("tipo").value;
-      if (!montoInput) return;
+      const raw = $monto.value.trim();
+      if (!raw) return;
+      const monto = parseFloat(raw);
+      if (isNaN(monto) || monto === 0) {
+        alert("Ingresa un monto válido (ej. 2000). Nota: usa valores negativos SOLO en Ahorro para retirar.");
+        return;
+      }
+      const tipo = $tipo.value;
 
-      let monto = parseFloat(montoInput);
-      const fecha = new Date().toLocaleString();
-
-      if (tipo === "sueldo") {
-        data.saldo += monto;
-      } else if (tipo === "ahorro") {
+      // Reglas de negocio
+      if (tipo === "Sueldo") {
+        state.saldo += monto;
+      } else if (tipo === "Ahorro") {
         if (monto < 0) {
-          data.ahorro += monto;
-          data.saldo += monto;
+          // Retiro de ahorro
+          state.ahorro += monto;   // suma negativo => reduce ahorro
+          state.saldo  += monto;   // suma negativo => reduce saldo
         } else {
-          data.ahorro += monto;
-          data.saldo -= monto;
+          // Aportación a ahorro
+          state.ahorro += monto;
+          state.saldo  -= monto;
         }
       } else {
-        data.gastos += monto;
-        data.saldo -= monto;
+        // Cualquier otro concepto cuenta como gasto (no afecta ahorro)
+        state.gastos += monto;
+        state.saldo  -= monto;
       }
 
-      data.registros.push({ tipo, monto, fecha });
-      document.getElementById("monto").value = "";
-      actualizarUI();
+      const now = new Date();
+      const registro = {
+        tipo,
+        monto,
+        fecha: fechaDisplay(tipo, now),
+        ts: now.getTime()
+      };
+      state.registros.push(registro);
+
+      $monto.value = "";
+      persist();
+      renderResumen();
+    }
+
+    function agruparPorSemana() {
+      // Mapa: key = inicioSemanaISO -> {inicio: Date, items: []}
+      const grupos = new Map();
+      for (const r of state.registros) {
+        const inicio = inicioSemanaJueves(r.ts);
+        const key = inicio.toISOString();
+        if (!grupos.has(key)) grupos.set(key, { inicio, items: [] });
+        grupos.get(key).items.push(r);
+      }
+      // Ordenar por inicio descendente
+      const ordenado = Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
+      // Dentro de cada grupo, ordenar por ts descendente
+      for (const g of ordenado) g.items.sort((a,b) => b.ts - a.ts);
+      return ordenado;
+    }
+
+    function renderHistorial() {
+      $contenedorSemanas.innerHTML = "";
+      const grupos = agruparPorSemana();
+      if (grupos.length === 0) {
+        $contenedorSemanas.innerHTML = `<div class="semana"><div class="rango">Sin movimientos aún</div></div>`;
+        return;
+      }
+      for (const grupo of grupos) {
+        const divSemana = document.createElement("div");
+        divSemana.className = "semana";
+        const rango = document.createElement("div");
+        rango.className = "rango";
+        rango.textContent = rangoSemanaTexto(grupo.inicio);
+        divSemana.appendChild(rango);
+
+        for (const r of grupo.items) {
+          const div = document.createElement("div");
+          div.className = "registro";
+          const izq = document.createElement("div");
+          izq.className = "tipo";
+          izq.textContent = r.tipo;
+          const der = document.createElement("div");
+          der.textContent = fmt.format(r.monto);
+          const fecha = document.createElement("div");
+          fecha.className = "fecha";
+          fecha.textContent = r.fecha;
+
+          div.appendChild(izq);
+          div.appendChild(der);
+          div.appendChild(fecha);
+          divSemana.appendChild(div);
+        }
+
+        $contenedorSemanas.appendChild(divSemana);
+      }
     }
 
     function toggleHistorial() {
-      const historial = document.getElementById("historial");
-      const lista = document.getElementById("listaHistorial");
-      historial.style.display = historial.style.display === "none" ? "block" : "none";
-      lista.innerHTML = "";
-      data.registros.slice().reverse().forEach(r => {
-        const div = document.createElement("div");
-        div.className = "registro";
-        div.innerHTML = `
-          <span><strong>${r.tipo.toUpperCase()}</strong> - ${formatear(r.monto)}</span>
-          <span>${r.fecha}</span>
-        `;
-        lista.appendChild(div);
-      });
+      const visible = $historial.style.display === "block";
+      if (visible) {
+        $historial.style.display = "none";
+        $historial.setAttribute("aria-hidden", "true");
+      } else {
+        renderHistorial();
+        $historial.style.display = "block";
+        $historial.setAttribute("aria-hidden", "false");
+      }
     }
 
-    verificarCorte();
-    actualizarUI();
+    /* ================== INIT ================== */
+    aplicarCortesPendientes(); // procesa cortes de jueves faltantes
+    renderResumen();
+
+    // Eventos
+    $btnConfirmar.addEventListener("click", agregarRegistro);
+    $monto.addEventListener("keydown", (e) => { if (e.key === "Enter") agregarRegistro(); });
+    $btnHistorial.addEventListener("click", toggleHistorial);
   </script>
 </body>
 </html>
