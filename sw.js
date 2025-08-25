@@ -1,7 +1,6 @@
 const CACHE_NAME = 'mi-control-financiero-cache-v1';
 const urlsToCache = [
   '/',
-  '/index.html',
   '/manifest.json',
   'https://cdn.jsdelivr.net/npm/chart.js',
   '/icon-192x192.png',
