@@ -1637,7 +1637,7 @@
             mostrarNotificacion("❗ Categoría inválida o ya existe", 'error');
         }
     });
-    $addDebtBtn.addEventListener('click', () => mostrarPantalla('deudas-screen'));
+    $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
     $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
     $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen'));
