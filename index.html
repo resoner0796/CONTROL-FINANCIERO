@@ -112,7 +112,7 @@
     }
     .actions .btn { flex: 1; }
 
-    /* ====== HISTORIAL ====== */
+    /* ====== HISTORIAL & GRAFICO ====== */
     #historial {
       width: 100%;
       max-width: 560px;
@@ -123,28 +123,55 @@
       margin-top: 10px;
     }
     #historial header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 12px 14px;
       border-bottom: 1px solid #232323;
       font-weight: 700;
       font-size: 15px;
       background: #161616;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
     }
-    .semana {
+    
+    .tabs {
+        display: flex;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+    .tab {
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        background: #202020;
+    }
+    .tab.active {
+        background: #2b7cff;
+        color: white;
+    }
+
+    .historial-content {
+      padding: 0;
+    }
+    .semana, .mes {
       padding: 10px 14px 2px;
       border-bottom: 1px dashed #232323;
     }
-    .semana .rango {
+    .semana .rango, .mes .rango {
       font-size: 12px;
       color: #b7b7b7;
       margin-bottom: 8px;
     }
     .registro {
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto 1fr auto auto;
       gap: 6px;
       padding: 8px 0;
       border-bottom: 1px solid #1f1f1f;
       font-size: 14px;
+      align-items: center;
     }
     .registro:last-child { border-bottom: none; }
     .registro .tipo {
@@ -165,6 +192,38 @@
     }
     .registro .monto {
       justify-self: end;
+      font-weight: 600;
+    }
+    .registro .delete-btn {
+      background: none;
+      border: none;
+      color: #ef5350;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 8px;
+    }
+
+    /* ====== GRAFICO CIRCULAR ====== */
+    #chart-container {
+        padding: 16px 14px;
+        background: #131313;
+        display: none;
+        border-bottom-left-radius: 14px;
+        border-bottom-right-radius: 14px;
+        border: 1px solid #232323;
+        border-top: none;
+    }
+    #chart-container h3 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        color: #ddd;
+    }
+    #chart {
+        width: 100%;
+        height: 250px;
+        max-width: 300px;
+        margin: auto;
     }
 
     /* ====== Notificacion ====== */
@@ -182,11 +241,14 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
       font-size: 15px;
       font-weight: 600;
+      white-space: nowrap;
     }
-
+    
     @media (max-width: 400px) {
       .input-area { grid-template-columns: 1fr; }
       .btn { width: 100%; }
+      .registro { grid-template-columns: 1fr 1fr auto auto; }
+      .registro .fecha { grid-column: auto; text-align: left; margin-top: 4px; }
     }
   </style>
 </head>
@@ -231,19 +293,35 @@
   </section>
 
   <section class="actions">
-    <button class="btn secundario" id="btn-historial">📜 Consultar movimientos</button>
+    <button class="btn secundario" id="btn-historial">📜 Ver historial y análisis</button>
   </section>
 
   <section id="historial">
-    <header>Historial por semana (Jue → Mié)</header>
-    <div id="contenedorSemanas"></div>
+    <header>
+      Historial
+      <div class="tabs">
+          <div class="tab active" data-view="semana">Semanal</div>
+          <div class="tab" data-view="mes">Mensual</div>
+          <div class="tab" data-view="analisis">Análisis</div>
+      </div>
+    </header>
+    <div id="contenedorSemanas" class="historial-content"></div>
+    <div id="contenedorMeses" class="historial-content" style="display: none;"></div>
+    <div id="chart-container" class="historial-content" style="display: none;">
+        <h3>Distribución de Gastos</h3>
+        <canvas id="chart"></canvas>
+    </div>
   </section>
 
-  <div id="notificacion" style="display: none;">✅ Transacción registrada</div>
+  <div id="notificacion" style="display: none;"></div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
     const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
+    const mesesLargos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+    let myChart;
 
     function inicioSemanaJueves(fecha) {
       const d = new Date(fecha);
@@ -271,6 +349,10 @@
       const hh = String(dateObj.getHours()).padStart(2,"0");
       const min = String(dateObj.getMinutes()).padStart(2,"0");
       return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+    }
+    function obtenerMesAno(timestamp) {
+        const fecha = new Date(timestamp);
+        return `${mesesLargos[fecha.getMonth()]} ${fecha.getFullYear()}`;
     }
 
     const state = (() => {
@@ -309,14 +391,19 @@
     const $btnHistorial = document.getElementById("btn-historial");
     const $historial = document.getElementById("historial");
     const $contenedorSemanas = document.getElementById("contenedorSemanas");
+    const $contenedorMeses = document.getElementById("contenedorMeses");
     const $notificacion = document.getElementById("notificacion");
+    const $tabs = document.querySelectorAll('.tab');
+    const $chartContainer = document.getElementById('chart-container');
+    const historialContentContainers = document.querySelectorAll('.historial-content');
 
-    function mostrarNotificacion(mensaje) {
+    function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
+        $notificacion.style.backgroundColor = (tipo === 'exito') ? '#4CAF50' : '#F44336';
         $notificacion.style.display = "block";
         setTimeout(() => {
             $notificacion.style.display = "none";
-        }, 2000);
+        }, 2500);
     }
 
     function renderResumen() {
@@ -328,17 +415,18 @@
     function agregarRegistro() {
       const raw = $monto.value.trim();
       if (!raw) {
-        mostrarNotificacion("❗ Ingresa un monto");
+        mostrarNotificacion("❗ Ingresa un monto", 'error');
         return;
       }
       const monto = parseFloat(raw);
       if (isNaN(monto) || monto === 0) {
-        mostrarNotificacion("❗ Monto inválido");
+        mostrarNotificacion("❗ Monto inválido", 'error');
         return;
       }
       const tipo = $tipo.value;
       const now = new Date();
       const registro = {
+          id: now.getTime(),
           tipo,
           monto,
           fecha: fechaDisplay(tipo, now),
@@ -362,10 +450,44 @@
 
       state.registros.push(registro);
       $monto.value = "";
-      $tipo.value = "Sueldo"; // Reseteamos el selector
+      $tipo.value = "Sueldo"; 
       persist();
       renderResumen();
       mostrarNotificacion("✅ Transacción registrada");
+      renderHistorial();
+    }
+    
+    function eliminarRegistro(id) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
+            return;
+        }
+
+        const index = state.registros.findIndex(r => r.id == id);
+        if (index === -1) return;
+        
+        const registro = state.registros[index];
+        const { tipo, monto } = registro;
+
+        if (tipo === "Sueldo") {
+            state.saldo -= monto;
+        } else if (tipo === "Ahorro") {
+            if (monto < 0) {
+                state.ahorro -= monto;
+                state.saldo -= monto;
+            } else {
+                state.ahorro -= monto;
+                state.saldo += monto;
+            }
+        } else {
+            state.gastos -= monto;
+            state.saldo += monto;
+        }
+
+        state.registros.splice(index, 1);
+        persist();
+        renderResumen();
+        renderHistorial();
+        mostrarNotificacion("🗑️ Registro eliminado", 'exito');
     }
 
     function obtenerIconoTipo(tipo) {
@@ -374,6 +496,14 @@
         if (tipo === "Ahorro") return "🟡";
         if (gastos.includes(tipo)) return "🔴";
         return "";
+    }
+
+    function crearRegistroHTML(registro) {
+        const div = document.createElement("div");
+        div.className = "registro";
+        const icono = obtenerIconoTipo(registro.tipo);
+        div.innerHTML = `<div class="tipo"><span class="icono">${icono}</span>${registro.tipo}</div><div class="monto">${fmt.format(registro.monto)}</div><button class="delete-btn" data-id="${registro.id}">✖️</button><div class="fecha">${registro.fecha}</div>`;
+        return div;
     }
 
     function agruparPorSemana() {
@@ -386,11 +516,22 @@
       }
       return Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
     }
+    
+    function agruparPorMes() {
+        const grupos = new Map();
+        for (const r of state.registros) {
+            const mesAno = obtenerMesAno(r.ts);
+            if (!grupos.has(mesAno)) grupos.set(mesAno, { nombre: mesAno, items: [] });
+            grupos.get(mesAno).items.push(r);
+        }
+        // Ordenar por fecha del primer elemento de cada mes, de más reciente a más antiguo
+        return Array.from(grupos.values()).sort((a, b) => b.items[0].ts - a.items[0].ts);
+    }
 
     function renderHistorial() {
       $contenedorSemanas.innerHTML = "";
-      const grupos = agruparPorSemana();
-      for (const g of grupos) {
+      const gruposSemanas = agruparPorSemana();
+      for (const g of gruposSemanas) {
         const divSemana = document.createElement("div");
         divSemana.className = "semana";
         const rango = document.createElement("div");
@@ -399,23 +540,105 @@
         divSemana.appendChild(rango);
 
         g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
-          const div = document.createElement("div");
-          div.className = "registro";
-          const icono = obtenerIconoTipo(r.tipo);
-          div.innerHTML = `<div class="tipo"><span class="icono">${icono}</span>${r.tipo}</div><div class="monto">${fmt.format(r.monto)}</div><div class="fecha">${r.fecha}</div>`;
-          divSemana.appendChild(div);
+          const registroEl = crearRegistroHTML(r);
+          divSemana.appendChild(registroEl);
         });
         $contenedorSemanas.appendChild(divSemana);
       }
+
+      $contenedorMeses.innerHTML = "";
+      const gruposMeses = agruparPorMes();
+      for (const g of gruposMeses) {
+          const divMes = document.createElement("div");
+          divMes.className = "mes";
+          const rango = document.createElement("div");
+          rango.className = "rango";
+          rango.textContent = g.nombre;
+          divMes.appendChild(rango);
+
+          g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
+              const registroEl = crearRegistroHTML(r);
+              divMes.appendChild(registroEl);
+          });
+          $contenedorMeses.appendChild(divMes);
+      }
+      
+      // Asignar eventos de eliminación
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => eliminarRegistro(e.currentTarget.dataset.id));
+      });
+    }
+
+    function renderChart() {
+        const gastos = state.registros.filter(r => {
+            const tipoGastos = ["Mandado", "Gastos del hogar", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
+            return tipoGastos.includes(r.tipo);
+        });
+        
+        const gastosPorCategoria = gastos.reduce((acc, curr) => {
+            acc[curr.tipo] = (acc[curr.tipo] || 0) + curr.monto;
+            return acc;
+        }, {});
+        
+        const labels = Object.keys(gastosPorCategoria);
+        const data = Object.values(gastosPorCategoria);
+        
+        if (myChart) myChart.destroy();
+        
+        const ctx = document.getElementById('chart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: [
+                        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+                        '#FF9F40', '#E7E9ED', '#A0522D', '#20B2AA', '#778899', '#D2691E', '#CD5C5C'
+                    ],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            color: '#e5e5e5'
+                        }
+                    }
+                }
+            }
+        });
     }
 
     function toggleHistorial() {
       if ($historial.style.display === "block") {
         $historial.style.display = "none";
       } else {
-        renderHistorial();
         $historial.style.display = "block";
+        handleTabClick({ currentTarget: document.querySelector('.tab.active') });
       }
+    }
+    
+    function handleTabClick(event) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        const view = event.currentTarget.dataset.view;
+        
+        historialContentContainers.forEach(c => c.style.display = 'none');
+        
+        if (view === 'semana') {
+            $contenedorSemanas.style.display = 'block';
+            renderHistorial();
+        } else if (view === 'mes') {
+            $contenedorMeses.style.display = 'block';
+            renderHistorial();
+        } else if (view === 'analisis') {
+            $chartContainer.style.display = 'block';
+            renderChart();
+        }
     }
 
     aplicarCortesPendientes();
@@ -423,6 +646,7 @@
     $btnConfirmar.addEventListener("click", agregarRegistro);
     $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro(); });
     $btnHistorial.addEventListener("click", toggleHistorial);
+    $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
   </script>
 </body>
 </html>
