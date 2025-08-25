@@ -99,14 +99,17 @@
       padding: 0;
       margin: 0;
       border: none;
+      pointer-events: none;
+      transform: translateY(-100%);
+      position: absolute;
     }
 
-   .metrics {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* <-- Cambiado a 2 columnas */
-  gap: 8px;
-  align-items: stretch;
-}
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      align-items: stretch;
+    }
 
     .metric {
       background: var(--input-bg);
@@ -894,7 +897,6 @@
     const $mandadoHistorialLista = document.getElementById('mandado-historial-lista');
     const $mandadoDetalleScreen = document.getElementById('mandado-detalle-screen');
     const $btnVolverDetalle = document.getElementById('btn-volver-detalle');
-    const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista');
     const $detalleTitulo = document.getElementById('detalle-titulo');
     const $detalleTotal = document.getElementById('detalle-total');
     const $themeSwitcher = document.getElementById('theme-switcher');
@@ -916,7 +918,6 @@
     const $deudaInfoPendiente = document.getElementById('deuda-info-pendiente');
     const $deudaPagoMonto = document.getElementById('deuda-pago-monto');
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
-    const $pagosLista = document.getElementById('pagos-lista');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -1612,13 +1613,13 @@
     $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     
     // Eventos de la nueva funcionalidad
-    $btnMandado.addEventListener('click', mostrarPantallaMandado);
+    $btnMandado.addEventListener('click', () => mostrarPantalla('mandado-screen'));
     $btnVolverMandado.addEventListener('click', () => mostrarPantalla('main-screen'));
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
     $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
-    $btnVolverHistorial.addEventListener('click', mostrarPantallaMandado);
+    $btnVolverHistorial.addEventListener('click', () => mostrarPantalla('mandado-screen'));
     $btnVolverDetalle.addEventListener('click', mostrarHistorialMandados);
     $themeSwitcher.addEventListener('click', toggleTheme);
     $addCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'flex');
@@ -1636,10 +1637,10 @@
             mostrarNotificacion("❗ Categoría inválida o ya existe", 'error');
         }
     });
-    $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
+    $addDebtBtn.addEventListener('click', () => mostrarPantalla('deudas-screen'));
     $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
-    $btnVolverDeudaDetalle.addEventListener('click', mostrarPantallaDeudas);
+    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen'));
     $btnRegistrarPago.addEventListener('click', registrarPago);
 
   </script>
