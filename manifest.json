@@ -2,7 +2,7 @@
   "name": "Mi Control Financiero",
   "short_name": "Finanzas",
   "description": "Una aplicación simple para llevar el control de tus finanzas personales y mandado.",
-  "start_url": "/",
+  "start_url": "/index.html?source=pwa",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#2b7cff",
