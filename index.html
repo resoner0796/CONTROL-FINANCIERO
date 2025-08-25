@@ -502,16 +502,41 @@
 
     const productosMandado = {
         "Frutas y Verduras": [
-            "Aguacate", "Ajo", "Apio", "Brócoli", "Calabaza", "Camote", "Cebolla", "Cebollín",
-            "Chayote", "Chile Habanero", "Chile Jalapeño", "Chile Poblano", "Cilantro", "Ciruela",
+            "Aguacate", "Ajo", "Apio", "Brócoli", "Calabaza", "Camote", "Cebolla", "Cebollin",
+            "Chayote", "Chile habanero", "Chile jalapeño", "Chile Poblano", "Cilantro", "Ciruela",
             "Coco", "Durazno", "Ejotes", "Elotes", "Espinaca", "Fresas", "Germen de Soya", "Guayaba",
-            "Jamaica", "Lechuga", "Limón", "Mango", "Manzanas", "Melón", "Naranjas", "Nopales",
+            "Jamaica", "Lechuga", "Limón", "Mango", "Manzanas", "Melon", "Naranjas", "Nopales",
             "Papa", "Papaya", "Pera", "Plátano", "Repollo", "Sandia", "Tamarindo", "Tomate", "Tuna",
-            "Uva", "Zacate de Limón", "Zanahoria"
+            "Uva", "Zacate de limón", "Zanahoria"
         ],
-        "Abarrotes": ["Aceite", "Ajo en polvo", "Arroz", "Arroz con leche", "Otros Abarrotes"],
-        "Higiene Personal": ["Shampoo", "Jabón", "Pasta dental", "Otros Higiene"],
-        "Carnes": ["Carne de res", "Pollo", "Pescado", "Otros Carnes"],
+        "Abarrotes": [
+            "Aceite", "Ajo en polvo", "Arroz", "Arroz con leche", "Atún", "Avena", "Azucar", "Azúcar glass",
+            "BBQ", "Bolillo", "Bolsa ziploc", "Cafe", "Canela", "Catsup", "Cereal", "Chile color",
+            "Chiles en vinagre", "Chocomilk", "Clamato", "Cóctel de frutas", "Comino", "Consomate",
+            "Crema", "Cremora", "Cuernitos", "Elotitos", "Empanizador", "Flan", "Frijol", "Frijoles rancheros",
+            "Granola", "Galletas", "Galletas saladas", "Harina", "Harina para hot cakes", "Harina para pastel",
+            "Horchata", "Huevo", "Laurel", "Leche", "Leche carnation", "Lechera", "Lechitas", "Macarrones",
+            "Maizena", "Mantequilla", "Maruchan", "Mayonesa", "Mermelada", "Mole", "Mostaza", "Nieve",
+            "Pan blanco", "Pan dulce", "Pan para hamburguesa", "Pan para hotdog", "Pan tostado", "Papa congelada",
+            "Papel de aluminio", "Pimienta", "Puré de tomate", "Puré huntz", "Queso amarillo", "Queso menonita",
+            "Queso parmesano", "Queso Philadelphia", "Ranch", "Sal", "Sal con cebolla", "Salsa botanera",
+            "Salsa picante", "Sazonador", "Servitoallas", "Sopa de coditos", "Spaguetti", "Tamarindo",
+            "Te de manzanilla", "Tortilla amarilla", "Tortillas de harina", "Tostadas", "Yakult", "Yogurth",
+            "Zukos"
+        ],
+        "Higiene Personal": [
+            "Aromatizante", "Bolsas para basura", "Cepillo dental", "Cortina para baño", "Cloro",
+            "Desengrasante", "Desodorante", "Fabuloso", "Esponja para trastes", "Gel", "Guantes",
+            "Jabón en polvo", "Jabón para baño", "Jabón para manos", "Jabón para ropa", "Jabón para trastes",
+            "Jabón zote", "Magitel", "Papel de baño", "Pasta de dientes", "Pastillas para baño",
+            "Pastillas para taza", "Pinol", "Plantillas", "Raidolitos", "Rastrillos", "shampoo",
+            "Sponja para bañarse", "Suavizante", "Talco", "Toallas sanitarias"
+        ],
+        "Carnes": [
+            "Carne molida", "Bistec", "Pechuga", "Higado", "Pescado", "Flecha", "Costilla", "Desherbada",
+            "Pollo", "Tocino", "Carne para hamburguesas", "Alitas", "Puerco", "Flautas congeladas",
+            "Jamón", "Salchicha", "Chorizo"
+        ],
         "Otros": ["Otros"]
     };
 
@@ -886,7 +911,7 @@
         $mandadoProducto.innerHTML = `<option value="">Selecciona Producto</option>`;
         
         if (categoria) {
-            productos.forEach(p => {
+            productos.sort().forEach(p => {
                 const option = document.createElement('option');
                 option.value = p;
                 option.textContent = p;
@@ -963,6 +988,7 @@
         renderMandadoList();
         $mandadoCategoria.value = '';
         $mandadoProducto.style.display = 'none';
+        $nombreArticulo.value = '';
         $nombreArticulo.style.display = 'none';
         $mandadoPeso.value = '';
         $mandadoPrecio.value = '';
