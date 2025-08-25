@@ -38,6 +38,30 @@ body {
   padding-bottom: env(safe-area-inset-bottom);
 }
 
+ html {
+    height: 100%;
+    background: var(--bg-color);
+
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  body {
+    margin: 0;
+    height: 100%;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
+    background: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 16px; /* este es tu espacio normal dentro del safe-area */
+    box-sizing: border-box;
+  }
+
     /* ====== VARIABLES DE TEMA ====== */
     :root {
       --bg-color: #0f0f10;
