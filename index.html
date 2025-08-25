@@ -7,256 +7,222 @@
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: #f1f1f1;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
       padding: 20px;
     }
-
     h1 {
-      color: #fff;
       margin-bottom: 20px;
+      color: #f5f5f5;
     }
-
-    .resumen {
-      background: #2c2c2c;
-      border-radius: 12px;
-      padding: 20px;
+    .panel {
       width: 100%;
       max-width: 500px;
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.6);
+      margin-bottom: 20px;
       text-align: center;
-      margin-bottom: 30px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
     }
-
-    .resumen div {
+    .panel h2 {
       margin: 10px 0;
       font-size: 18px;
     }
+    .saldo { color: #4caf50; font-size: 22px; }
+    .ahorro { color: #2196f3; font-size: 22px; }
+    .gastos { color: #f44336; font-size: 22px; }
 
-    .formulario {
+    .input-area {
       display: flex;
-      justify-content: center;
       gap: 10px;
-      flex-wrap: wrap;
       width: 100%;
       max-width: 500px;
+      margin-bottom: 20px;
     }
-
-    input, select, button {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 6px;
-      border: none;
-    }
-
-    input {
+    .input-area input, .input-area select {
       flex: 1;
-      background: #333;
-      color: #fff;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
     }
-
-    select {
-      background: #444;
-      color: #fff;
-    }
-
-    button {
-      background: #007bff;
-      color: #fff;
+    .input-area button {
+      background: #4caf50;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: 0.2s;
+      font-size: 16px;
+      color: white;
+      transition: background 0.3s;
     }
+    .input-area button:hover { background: #43a047; }
 
-    button:hover {
-      background: #0056b3;
+    .actions {
+      margin-top: 10px;
     }
+    .actions button {
+      background: #2196f3;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      color: white;
+      transition: background 0.3s;
+    }
+    .actions button:hover { background: #1976d2; }
 
-    .lista-registros {
-      margin-top: 30px;
+    #historial {
       width: 100%;
       max-width: 500px;
-      background: #2a2a2a;
+      background: #1e1e1e;
+      border-radius: 12px;
       padding: 15px;
-      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      max-height: 300px;
+      overflow-y: auto;
     }
-
+    #historial h3 {
+      margin-bottom: 10px;
+      color: #f5f5f5;
+    }
     .registro {
-      border-bottom: 1px solid #444;
+      border-bottom: 1px solid #333;
       padding: 8px 0;
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
+      font-size: 14px;
     }
-
-    .registro:last-child {
-      border-bottom: none;
-    }
-
-    .fecha {
-      font-size: 12px;
-      color: #aaa;
-      width: 100%;
-      text-align: right;
+    .registro span {
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>Mi Control Financiero</h1>
-  
-  <div class="resumen">
-    <div><strong>Saldo Total:</strong> $<span id="saldo">0</span></div>
-    <div><strong>Ahorro:</strong> $<span id="ahorro">0</span></div>
-    <div><strong>Gastos Totales:</strong> $<span id="gastos">0</span></div>
+  <h1>💰 Mi Control Financiero</h1>
+
+  <div class="panel">
+    <h2>Saldo Total: <span id="saldo" class="saldo">$0</span></h2>
+    <h2>Monto Ahorrado: <span id="ahorro" class="ahorro">$0</span></h2>
+    <h2>Gastos Totales: <span id="gastos" class="gastos">$0</span></h2>
   </div>
 
-  <div class="formulario">
-    <input type="number" id="monto" placeholder="Ingresa monto">
+  <div class="input-area">
+    <input type="number" id="monto" placeholder="Ingresa monto...">
     <select id="tipo">
-      <option value="Sueldo">Sueldo</option>
-      <option value="Ahorro">Ahorro</option>
-      <option value="Mandado">Mandado</option>
-      <option value="Gastos del hogar">Gastos del hogar</option>
-      <option value="Otros">Otros</option>
+      <option value="sueldo">Sueldo</option>
+      <option value="ahorro">Ahorro</option>
+      <option value="mandado">Mandado</option>
+      <option value="hogar">Gastos del hogar</option>
+      <option value="otros">Otros</option>
     </select>
     <button onclick="agregarRegistro()">Confirmar</button>
   </div>
 
-  <div class="lista-registros" id="listaRegistros">
-    <h3>Historial de movimientos</h3>
+  <div class="actions">
+    <button onclick="toggleHistorial()">📜 Consultar movimientos</button>
+  </div>
+
+  <div id="historial">
+    <h3>Historial por Semana</h3>
+    <div id="listaHistorial"></div>
   </div>
 
   <script>
-    let saldo = 0;
-    let ahorro = 0;
-    let gastos = 0;
-    let registros = [];
-    let ultimaCorte = null;
-
-    // Obtener último jueves
-    function obtenerUltimoJueves(fecha = new Date()) {
-      let d = new Date(fecha);
-      let day = d.getDay(); // 0 = domingo ... 4 = jueves
-      let diff = day >= 4 ? day - 4 : day + 3 + 1; 
-      d.setDate(d.getDate() - diff);
-      d.setHours(0,0,0,0);
-      return d;
-    }
-
-    // Verifica si ya pasó un nuevo jueves desde el último corte
-    function verificarCorte() {
-      const hoy = new Date();
-      const ultimoJueves = obtenerUltimoJueves(hoy);
-
-      if (!ultimaCorte || new Date(ultimaCorte).getTime() < ultimoJueves.getTime()) {
-        gastos = 0;
-        registros = [];
-        ultimaCorte = ultimoJueves;
-        guardarDatos();
-        cargarRegistros();
-        actualizarResumen();
-      }
-    }
-
-    // Cargar datos desde localStorage al iniciar
-    window.onload = function() {
-      const datosGuardados = localStorage.getItem("finanzas");
-      if (datosGuardados) {
-        const datos = JSON.parse(datosGuardados);
-        saldo = datos.saldo;
-        ahorro = datos.ahorro;
-        gastos = datos.gastos;
-        registros = datos.registros;
-        ultimaCorte = datos.ultimaCorte;
-      }
-      verificarCorte();
-      actualizarResumen();
-      cargarRegistros();
+    let data = JSON.parse(localStorage.getItem("finanzas")) || {
+      saldo: 0,
+      ahorro: 0,
+      gastos: 0,
+      registros: [],
+      ultimaSemana: null
     };
 
-    function actualizarResumen() {
-      document.getElementById("saldo").innerText = saldo.toFixed(2);
-      document.getElementById("ahorro").innerText = ahorro.toFixed(2);
-      document.getElementById("gastos").innerText = gastos.toFixed(2);
-      guardarDatos();
+    function formatear(num) {
+      return "$" + num.toLocaleString("es-MX");
     }
 
-    function guardarDatos() {
-      const datos = {
-        saldo,
-        ahorro,
-        gastos,
-        registros,
-        ultimaCorte
-      };
-      localStorage.setItem("finanzas", JSON.stringify(datos));
+    function actualizarUI() {
+      document.getElementById("saldo").textContent = formatear(data.saldo);
+      document.getElementById("ahorro").textContent = formatear(data.ahorro);
+      document.getElementById("gastos").textContent = formatear(data.gastos);
+      localStorage.setItem("finanzas", JSON.stringify(data));
     }
 
-    function cargarRegistros() {
-      const lista = document.getElementById("listaRegistros");
-      lista.innerHTML = "<h3>Historial de movimientos</h3>";
-      registros.forEach(r => {
-        const registro = document.createElement("div");
-        registro.classList.add("registro");
-        registro.innerHTML = `
-          <span>${r.tipo}</span><span>$${r.monto.toFixed(2)}</span>
-          <div class="fecha">${r.fecha}</div>
-        `;
-        lista.appendChild(registro);
-      });
+    function obtenerSemana(fecha) {
+      const d = new Date(fecha);
+      const oneJan = new Date(d.getFullYear(),0,1);
+      const numberOfDays = Math.floor((d - oneJan) / (24*60*60*1000));
+      return Math.ceil((d.getDay() + 1 + numberOfDays) / 7);
     }
 
-    function obtenerFecha(tipo) {
-      const ahora = new Date();
-      let dia = String(ahora.getDate()).padStart(2, "0");
-      let mes = String(ahora.getMonth() + 1).padStart(2, "0");
-      let anio = ahora.getFullYear();
-      let horas = String(ahora.getHours()).padStart(2, "0");
-      let minutos = String(ahora.getMinutes()).padStart(2, "0");
-
-      if (tipo === "Sueldo") {
-        return `${dia}/${mes}/${anio}`;
-      } else {
-        return `${dia}/${mes}/${anio} ${horas}:${minutos}`;
+    function verificarCorte() {
+      const hoy = new Date();
+      const semanaActual = obtenerSemana(hoy);
+      if (data.ultimaSemana && semanaActual !== data.ultimaSemana && hoy.getDay() === 4) { 
+        data.registros.push({
+          tipo: "CIERRE",
+          monto: 0,
+          fecha: hoy.toLocaleString(),
+          detalle: "Cierre semanal automático"
+        });
+        data.gastos = 0;
       }
+      data.ultimaSemana = semanaActual;
+      actualizarUI();
     }
 
     function agregarRegistro() {
-      const montoInput = document.getElementById("monto");
+      const montoInput = document.getElementById("monto").value;
       const tipo = document.getElementById("tipo").value;
-      let monto = parseFloat(montoInput.value);
+      if (!montoInput) return;
 
-      if (isNaN(monto) || monto === 0) {
-        alert("Por favor ingresa un monto válido");
-        return;
-      }
+      let monto = parseFloat(montoInput);
+      const fecha = new Date().toLocaleString();
 
-      if (tipo === "Sueldo") {
-        saldo += monto;
-      } else if (tipo === "Ahorro") {
+      if (tipo === "sueldo") {
+        data.saldo += monto;
+      } else if (tipo === "ahorro") {
         if (monto < 0) {
-          ahorro += monto; 
-          saldo += monto;
+          data.ahorro += monto;
+          data.saldo += monto;
         } else {
-          ahorro += monto;
-          saldo -= monto;
+          data.ahorro += monto;
+          data.saldo -= monto;
         }
       } else {
-        gastos += monto;
-        saldo -= monto;
+        data.gastos += monto;
+        data.saldo -= monto;
       }
 
-      const fecha = obtenerFecha(tipo);
-      registros.push({ tipo, monto, fecha });
-      cargarRegistros();
-      montoInput.value = "";
-      actualizarResumen();
+      data.registros.push({ tipo, monto, fecha });
+      document.getElementById("monto").value = "";
+      actualizarUI();
     }
 
-    actualizarResumen();
+    function toggleHistorial() {
+      const historial = document.getElementById("historial");
+      const lista = document.getElementById("listaHistorial");
+      historial.style.display = historial.style.display === "none" ? "block" : "none";
+      lista.innerHTML = "";
+      data.registros.slice().reverse().forEach(r => {
+        const div = document.createElement("div");
+        div.className = "registro";
+        div.innerHTML = `
+          <span><strong>${r.tipo.toUpperCase()}</strong> - ${formatear(r.monto)}</span>
+          <span>${r.fecha}</span>
+        `;
+        lista.appendChild(div);
+      });
+    }
+
+    verificarCorte();
+    actualizarUI();
   </script>
 </body>
 </html>
