@@ -79,6 +79,7 @@ body {
       --color-higiene-personal: #42a5f5; /* Azul */
       --color-frutas-verduras: #66bb6a; /* Verde */
       --color-carnes: #ef5350; /* Rojo */
+      --color-abarrotes: #ff9800; /* Naranja (CORRECCIÓN) */
       --color-otros: #a9a9a9; /* Gris */
     }
 
@@ -103,6 +104,7 @@ body {
       --color-higiene-personal: #1976d2;
       --color-frutas-verduras: #388e3c;
       --color-carnes: #c62828;
+      --color-abarrotes: #ef6c00; /* Naranja (CORRECCIÓN) */
       --color-otros: #666666;
     }
 
@@ -330,6 +332,7 @@ body {
     #mandado-screen #lista-mandado li .nombre.higiene { color: var(--color-higiene-personal); }
     #mandado-screen #lista-mandado li .nombre.frutas { color: var(--color-frutas-verduras); }
     #mandado-screen #lista-mandado li .nombre.carnes { color: var(--color-carnes); }
+    #mandado-screen #lista-mandado li .nombre.abarrotes { color: var(--color-abarrotes); } /* CORRECCIÓN */
     #mandado-screen #lista-mandado li .nombre.otros { color: var(--color-otros); }
     
     #mandado-screen #lista-mandado li .cantidad,
@@ -337,26 +340,37 @@ body {
         font-size: 13px;
         color: var(--text-light);
     }
-    #mandado-screen #lista-mandado li .precio,
+    #mandado-screen #lista-mandado li .nombre,
+    #mandado-screen #lista-mandado li .precio {
+        font-weight: bold; /* CORRECCIÓN: Nombres y precios en negritas */
+    }
+    
     #mandado-historial-lista li .precio,
     #mandado-detalle-lista li .precio,
     #deudas-lista li .monto,
     #pagos-lista li .monto {
       font-weight: 600;
     }
+
     #mandado-screen #lista-mandado li .actions {
       display: flex;
       gap: 8px;
       flex: none;
       margin: 0;
     }
+
+    /* CORRECCIÓN: Ajuste para los botones de la lista de mandado */
     #mandado-screen #lista-mandado li .actions .btn {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       padding: 0;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+    
     #deudas-lista li .acciones {
         display: flex;
         gap: 8px;
@@ -386,6 +400,12 @@ body {
     #deuda-detalle-screen .deuda-info .monto {
         font-size: 18px;
         color: var(--accent-red);
+    }
+    
+    /* CORRECCIÓN: Estilos para que el historial de pagos no desborde */
+    #deuda-detalle-screen #pagos-lista {
+        overflow-y: auto;
+        max-height: 300px;
     }
 
     #mandado-screen .total-container,
@@ -501,20 +521,25 @@ body {
     #pagos-lista li {
       cursor: default;
     }
-
+    
+    /* CORRECCIÓN: Ajuste para que los botones de eliminar del historial de pagos no desborden */
     #pagos-lista li .actions {
-        display: flex;
-        gap: 8px;
-        flex: none;
-        margin: 0;
+      display: flex;
+      gap: 8px;
+      flex: none;
+      margin: 0;
+      align-items: center;
     }
     
     #pagos-lista li .actions .btn {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       padding: 0;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* ====== GRAFICO CIRCULAR ====== */
@@ -900,6 +925,8 @@ body {
                 return "frutas";
             case "Carnes":
                 return "carnes";
+            case "Abarrotes": // CORRECCIÓN
+                return "abarrotes";
             default:
                 return "otros";
         }
@@ -1442,7 +1469,8 @@ body {
                 option.textContent = p;
                 $mandadoProducto.appendChild(option);
             });
-            $mandadoProducto.style.display = (categoria === 'Otros' || categoria === 'Carnes') ? 'none' : 'block';
+            // CORRECCIÓN: Ahora también se muestra el dropdown para Carnes
+            $mandadoProducto.style.display = (categoria === 'Otros') ? 'none' : 'block';
             $nombreArticulo.style.display = (categoria === 'Otros') ? 'block' : 'none';
             // REPARACIÓN 2: Lógica para mostrar/ocultar campos de peso y cantidad
             $mandadoPeso.style.display = (categoria === 'Frutas y Verduras') ? 'block' : 'none';
