@@ -8,14 +8,14 @@
   <meta name="theme-color" content="#121212" />
   <meta name="background-color" content="#121212" />
 
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Finanzas">
 
-  <link rel="apple-touch-icon" href="/icon-192x192.png">
-  <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png">
+  <link rel="apple-touch-icon" href="./icon-192x192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="./icon-512x512.png">
 
   <meta name="description" content="Una aplicación simple para llevar el control de tus finanzas personales y mandado.">
   <meta name="author" content="Ulises Luna">
@@ -1739,7 +1739,7 @@ body {
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
           .then(registration => {
             console.log('Service Worker registrado con éxito:', registration.scope);
           })
