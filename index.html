@@ -1720,8 +1720,7 @@ body {
     }
     
     function esGastoEfectivo(tipo) {
-        const tiposEfectivo = ["Mandado", "Tienda", "Otros", ...(state.customEfectivoCategories || [])].map(t => `Efectivo: ${t}`);
-        return tiposEfectivo.includes(tipo);
+        return tipo.startsWith("Efectivo: ");
     }
 
 
@@ -1748,7 +1747,6 @@ body {
     function agruparPorSemana() {
       if (!state.registros) return [];
       const grupos = new Map();
-      // ✅ AJUSTE 2: Se modifica el filtro para no ocultar el retiro de efectivo del historial general.
       const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
       const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       
@@ -1763,7 +1761,6 @@ body {
     
     function agruparPorMes() {
         if (!state.registros) return [];
-        // ✅ AJUSTE 2: Se modifica el filtro para no ocultar el retiro de efectivo del historial general.
         const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
         const grupos = new Map();
         const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
@@ -1811,7 +1808,7 @@ body {
           $contenedorMeses.appendChild(divMes);
       }
       
-      document.querySelectorAll('.delete-btn').forEach(btn => {
+      document.querySelectorAll('#historial .delete-btn').forEach(btn => {
           btn.addEventListener('click', (e) => eliminarRegistro(e.currentTarget.dataset.id));
       });
     }
@@ -1853,14 +1850,13 @@ body {
             $contenedorSemanasEfectivo.appendChild(divSemana);
         }
         
-        document.querySelectorAll('#efectivo-historial .delete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => eliminarRegistro(parseInt(e.currentTarget.dataset.id)));
-        });
+        // Se mueve el event listener a una delegación de eventos para evitar duplicados.
     }
 
     function renderChart() {
         const gastos = (state.registros || []).filter(r => {
-            const tipoGastos = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
+            // ✅ AJUSTE 1: Se agrega "Efectivo" a la lista de conceptos a graficar.
+            const tipoGastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
             return tipoGastos.includes(r.tipo) && r.monto > 0;
         });
         
@@ -1903,7 +1899,7 @@ body {
     }
     
     function renderLineChart() {
-        const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE" && r.tipo !== "Efectivo" && !r.tipo.startsWith("Efectivo: "));
+        const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE" && !r.tipo.startsWith("Efectivo: "));
         const gastosPorFecha = gastos.reduce((acc, curr) => {
             const date = new Date(curr.ts instanceof Timestamp ? curr.ts.toDate() : curr.ts).toISOString().slice(0, 10);
             if (!acc[date]) acc[date] = 0;
@@ -1998,15 +1994,18 @@ body {
         } else {
             $mainPanel.classList.add('hidden');
         }
+
+        // ✅ AJUSTE 2: Llamada al renderizado específico de la pantalla para asegurar que siempre se actualice.
+        if (id === 'efectivo-screen') {
+            renderHistorialEfectivo();
+        }
     }
     function mostrarPantallaMandado() {
         mostrarPantalla('mandado-screen');
-        // Aquí se limpia el formulario al volver o al iniciar un nuevo mandado
         limpiarFormularioMandado(); 
     }
-    // REPARACIÓN 1: Reinicia la variable mandadoTicket
+    
     function limpiarFormularioMandado() {
-        // === MODIFICACIÓN 2: Se reinician también los totales por categoría ===
         mandadoTicket = { items: [], total: 0, categoryTotals: {} };
         editIndex = null;
         renderMandadoList();
@@ -2032,10 +2031,8 @@ body {
                 option.textContent = p;
                 $mandadoProducto.appendChild(option);
             });
-            // CORRECCIÓN: Ahora también se muestra el dropdown para Carnes
             $mandadoProducto.style.display = (categoria === 'Otros') ? 'none' : 'block';
             $nombreArticulo.style.display = (categoria === 'Otros') ? 'block' : 'none';
-            // REPARACIÓN 2: Lógica para mostrar/ocultar campos de peso y cantidad
             $mandadoPeso.style.display = (categoria === 'Frutas y Verduras') ? 'block' : 'none';
             $mandadoCantidad.style.display = (categoria === 'Abarrotes' || categoria === 'Higiene Personal' || categoria === 'Carnes') ? 'block' : 'none';
             $mandadoPrecio.style.display = 'block';
@@ -2050,7 +2047,6 @@ body {
         }
     }
     
-    // REPARACIÓN 3: Lógica para calcular el monto con cantidad
     function agregarArticulo() {
         const categoria = $mandadoCategoria.value;
         let nombre = '';
@@ -2092,7 +2088,6 @@ body {
             monto = cantidad * precio;
             unidad = "pz";
         } else {
-            // Carnes y otros se manejan por pieza
             cantidad = 1;
             monto = precio;
             unidad = "pz";
@@ -2101,8 +2096,6 @@ body {
         const articulo = { nombre, monto, cantidad, unidad, categoria };
 
         if (editIndex !== null) {
-            // Modo edición
-            // === MODIFICACIÓN 3: Lógica para actualizar los totales por categoría en modo edición ===
             const oldItem = mandadoTicket.items[editIndex];
             mandadoTicket.total -= oldItem.monto;
             mandadoTicket.total += articulo.monto;
@@ -2115,10 +2108,8 @@ body {
             editIndex = null;
             $btnAgregarArticulo.textContent = "➕ Agregar";
         } else {
-            // Modo agregar nuevo
             mandadoTicket.items.push(articulo);
             mandadoTicket.total += articulo.monto;
-            // === MODIFICACIÓN 4: Lógica para actualizar los totales por categoría en modo agregar ===
             mandadoTicket.categoryTotals[articulo.categoria] = (mandadoTicket.categoryTotals[articulo.categoria] || 0) + articulo.monto;
         }
 
@@ -2140,7 +2131,6 @@ body {
         if (index >= 0 && index < mandadoTicket.items.length) {
             const item = mandadoTicket.items[index];
             mandadoTicket.total -= item.monto;
-            // === MODIFICACIÓN 5: Restar el monto del total de la categoría al eliminar ===
             mandadoTicket.categoryTotals[item.categoria] -= item.monto;
             if (mandadoTicket.categoryTotals[item.categoria] <= 0) {
                 delete mandadoTicket.categoryTotals[item.categoria];
@@ -2197,11 +2187,9 @@ body {
             $listaMandado.appendChild(li);
         });
         $totalTicket.textContent = fmt.format(mandadoTicket.total);
-        // === MODIFICACIÓN 6: Llamada a la nueva función para renderizar los totales por categoría ===
         renderCategoryTotals();
     }
 
-    // === NUEVA FUNCIÓN para renderizar los totales por categoría ===
     function renderCategoryTotals() {
         $mandadoCategoriaTotales.innerHTML = '';
         const categoriasOrdenadas = Object.keys(mandadoTicket.categoryTotals).sort();
@@ -2232,13 +2220,11 @@ body {
         };
         state.mandadoTickets.push(ticketCompleto);
         
-        // Registrar el total del mandado como un gasto en el historial principal
         await agregarRegistro("Mandado", mandadoTicket.total);
 
         await persist();
         mostrarNotificacion("✅ Ticket guardado en el historial");
         mostrarPantalla('main-screen');
-        // REPARACIÓN 1: Limpia el formulario después de guardar
         limpiarFormularioMandado();
     }
 
@@ -2254,7 +2240,6 @@ body {
         });
     }
 
-    // NEW: Function to delete a grocery ticket
     async function eliminarTicketMandado(id) {
         if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
             return;
@@ -2269,10 +2254,9 @@ body {
         state.mandadoTickets.splice(index, 1);
         await persist();
         mostrarNotificacion("🗑️ Ticket eliminado");
-        mostrarHistorialMandados(); // Re-render the list
+        mostrarHistorialMandados();
     }
 
-    // REPARACIÓN 3: Se muestra la lista de artículos
     function mostrarDetalleMandado(id) {
         const ticket = (state.mandadoTickets || []).find(t => t.id == id);
         if (!ticket) {
@@ -2297,9 +2281,8 @@ body {
         const currentTheme = document.documentElement.getAttribute("data-theme");
         const newTheme = currentTheme === "dark" ? "light" : "dark";
         document.documentElement.setAttribute("data-theme", newTheme);
-        localStorage.setItem("theme", newTheme); // Sigue usando localStorage para el tema
+        localStorage.setItem("theme", newTheme);
         $themeSwitcher.textContent = newTheme === "dark" ? "☀️" : "🌙";
-        // Update chart colors on theme switch
         if (myChart) renderChart();
         if (myLineChart) renderLineChart();
     }
@@ -2333,7 +2316,6 @@ body {
             montoPendiente: montoInicial,
             fechaCreacion: new Date().toISOString(),
             pagos: [],
-            // === NUEVOS CAMPOS ===
             promedioPago: 0,
             promedioDias: 0
         };
@@ -2386,14 +2368,11 @@ body {
         $deudaInfoNombre.textContent = deuda.nombre;
         $deudaInfoPendiente.textContent = `Pendiente: ${fmt.format(deuda.montoPendiente)} de ${fmt.format(deuda.montoOriginal)}`;
         
-        // Cargar los valores de proyección guardados
         $promedioPagoInput.value = deuda.promedioPago > 0 ? deuda.promedioPago : '';
         $promedioDiasInput.value = deuda.promedioDias > 0 ? deuda.promedioDias : '';
         
-        // Recalcular la proyección
         recalcularProyeccion();
         
-        // Actualizar la barra de progreso
         const porcentajePagado = ((deuda.montoOriginal - deuda.montoPendiente) / deuda.montoOriginal) * 100;
         $progressBar.style.width = `${porcentajePagado}%`;
         $progressText.textContent = `${porcentajePagado.toFixed(1)}%`;
@@ -2401,7 +2380,6 @@ body {
         renderPagosDeuda(deuda);
     }
     
-    // --- NUEVA LÓGICA: Recalcula la proyección basada en los inputs del usuario ---
     function recalcularProyeccion() {
         const deuda = (state.deudas || []).find(d => d.id == currentDebtId);
         if (!deuda) return;
@@ -2409,7 +2387,6 @@ body {
         const avgPago = parseFloat($promedioPagoInput.value) || 0;
         const avgDias = parseInt($promedioDiasInput.value) || 0;
         
-        // Persistir los valores nuevos en el estado
         deuda.promedioPago = avgPago;
         deuda.promedioDias = avgDias;
         persist();
@@ -2428,7 +2405,6 @@ body {
 
         $fechaLiquidacion.textContent = fechaEstimada;
     }
-    // --- Fin de las nuevas funciones ---
 
     function renderPagosDeuda(deuda) {
         $pagosLista.innerHTML = '';
@@ -2506,7 +2482,6 @@ body {
         mostrarDetalleDeuda(currentDebtId);
     }
     
-    // NUEVAS FUNCIONES: Pagos Mensuales
     function mostrarPantallaPagosMensuales() {
         mostrarPantalla('pagos-mensuales-screen');
         renderPagosMensualesList();
@@ -2555,7 +2530,6 @@ body {
             const nombrePago = state.pagosMensuales[index].nombre;
             state.pagosMensuales.splice(index, 1);
             
-            // Eliminar de las categorías de gasto personalizadas
             const catIndex = state.customCategories.findIndex(c => c === nombrePago);
             if(catIndex !== -1) {
                 state.customCategories.splice(catIndex, 1);
@@ -2597,16 +2571,14 @@ body {
 
     // Event Listeners
     applySavedTheme();
-    // La inicialización del estado y renderizado se mueve a initFirestore
     
     $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value)));
     $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro($tipo.value, parseFloat($monto.value)); });
     $btnHistorial.addEventListener("click", toggleHistorial);
     $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     
-    // Eventos de la nueva funcionalidad
-    $btnMandado.addEventListener('click', mostrarPantallaMandado); // Usa la nueva función
-    $btnVolverMandado.addEventListener('click', () => { mostrarPantalla('main-screen'); limpiarFormularioMandado(); }); // Llama a la nueva función
+    $btnMandado.addEventListener('click', mostrarPantallaMandado);
+    $btnVolverMandado.addEventListener('click', () => { mostrarPantalla('main-screen'); limpiarFormularioMandado(); });
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
@@ -2633,13 +2605,11 @@ body {
     $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
     $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
-    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen')); // Corregido: regresa a la pantalla de deudas
+    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen'));
     $btnRegistrarPago.addEventListener('click', registrarPago);
-    // Nuevos event listeners para los inputs de proyección
     $promedioPagoInput.addEventListener('input', recalcularProyeccion);
     $promedioDiasInput.addEventListener('input', recalcularProyeccion);
     
-    // NUEVOS EVENT LISTENERS PARA PAGOS MENSUALES
     $btnPagosMensuales.addEventListener('click', mostrarPantallaPagosMensuales);
     $btnVolverPagosMensuales.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarPagoMensual.addEventListener('click', agregarPagoMensual);
@@ -2652,11 +2622,7 @@ body {
     });
     
     // EVENTOS DE LA NUEVA PANTALLA DE EFECTIVO
-    // ✅ AJUSTE 1: Se agrega la llamada a renderHistorialEfectivo() para que la lista se cargue siempre.
-    $btnIrEfectivo.addEventListener('click', () => { 
-        mostrarPantalla('efectivo-screen');
-        renderHistorialEfectivo(); 
-    });
+    $btnIrEfectivo.addEventListener('click', () => mostrarPantalla('efectivo-screen'));
     $btnVolverEfectivo.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)));
     $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)); });
@@ -2685,54 +2651,49 @@ body {
         }
     });
 
-    // Delegación de eventos para los botones de editar y eliminar
-    $listaMandado.addEventListener('click', (event) => {
-        const btn = event.target.closest('.edit-item, .delete-item');
-        if (!btn) return;
-        
-        const index = parseInt(btn.dataset.index);
-        
-        if (btn.classList.contains('edit-item')) {
-            editarArticuloDelTicket(index);
-        } else if (btn.classList.contains('delete-item')) {
-            eliminarArticuloDelTicket(index);
-        }
-    });
+    // Delegación de eventos para los botones de las listas
+    document.body.addEventListener('click', (event) => {
+        const target = event.target;
 
-    // Delegación de eventos para la lista de historial de mandados
-    $mandadoHistorialLista.addEventListener('click', (event) => {
-        const btn = event.target.closest('.delete-ticket-btn');
-        if (btn) {
-            const id = btn.dataset.id;
-            eliminarTicketMandado(id);
-        } else {
-            const li = event.target.closest('li');
-            if (!li) return;
-            const id = li.dataset.id;
-            if (id) {
-                mostrarDetalleMandado(id);
+        // Botones de editar/eliminar en lista de mandado
+        const mandadoBtn = target.closest('#lista-mandado .edit-item, #lista-mandado .delete-item');
+        if (mandadoBtn) {
+            const index = parseInt(mandadoBtn.dataset.index);
+            if (mandadoBtn.classList.contains('edit-item')) {
+                editarArticuloDelTicket(index);
+            } else if (mandadoBtn.classList.contains('delete-item')) {
+                eliminarArticuloDelTicket(index);
             }
+            return;
+        }
+
+        // Clic en ticket de historial de mandado o su botón de eliminar
+        const mandadoHistorialItem = target.closest('#mandado-historial-lista li');
+        if (mandadoHistorialItem) {
+            const deleteTicketBtn = target.closest('.delete-ticket-btn');
+            if (deleteTicketBtn) {
+                eliminarTicketMandado(deleteTicketBtn.dataset.id);
+            } else if (mandadoHistorialItem.dataset.id) {
+                mostrarDetalleMandado(mandadoHistorialItem.dataset.id);
+            }
+            return;
+        }
+
+        // Botón de eliminar pago de deuda
+        const deletePagoBtn = target.closest('#pagos-lista .delete-pago-btn');
+        if (deletePagoBtn) {
+            eliminarPago(parseInt(deletePagoBtn.dataset.pagoId));
+            return;
+        }
+
+        // Botón de eliminar en historial general y de efectivo
+        const deleteRegistroBtn = target.closest('.delete-btn');
+        if(deleteRegistroBtn) {
+            eliminarRegistro(parseInt(deleteRegistroBtn.dataset.id));
         }
     });
 
-    // Delegación de eventos para la lista de pagos de deudas
-    $pagosLista.addEventListener('click', (event) => {
-        const btn = event.target.closest('.delete-pago-btn');
-        if (!btn) return;
-
-        const pagoId = parseInt(btn.dataset.pagoId);
-        eliminarPago(pagoId);
-    });
-
-    // Delegación de eventos para el historial de efectivo
-    $contenedorSemanasEfectivo.addEventListener('click', (e) => {
-        const btn = e.target.closest('.delete-btn');
-        if (btn) {
-            eliminarRegistro(parseInt(btn.dataset.id));
-        }
-    });
-
-    initFirestore(); // ¡Inicia la app con la conexión a Firebase!
+    initFirestore();
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
