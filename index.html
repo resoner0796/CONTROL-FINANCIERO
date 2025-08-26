@@ -425,6 +425,58 @@ body {
         overflow-y: auto;
         max-height: 300px;
     }
+    
+    /* === NUEVOS ESTILOS PARA LA PROYECCIÓN DE DEUDAS === */
+    .deuda-proyeccion {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .deuda-proyeccion .label-proyeccion {
+        font-size: 13px;
+        color: var(--text-light);
+        font-weight: 500;
+        margin-top: 4px;
+    }
+
+    .deuda-proyeccion .valor-proyeccion {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .progress-bar-container {
+        width: 100%;
+        background-color: var(--input-bg);
+        border-radius: 8px;
+        height: 16px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: var(--accent-green);
+        transition: width 0.3s ease-in-out;
+    }
+
+    .progress-text {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-color);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-shadow: 0 0 4px rgba(0,0,0,0.6);
+    }
+    
+    .progress-container {
+        position: relative;
+    }
+    /* === FIN NUEVOS ESTILOS === */
 
     #mandado-screen .total-container,
     #mandado-historial-screen .total-container,
@@ -872,6 +924,17 @@ body {
     <div class="deuda-info">
         <span class="titulo" id="deuda-info-nombre"></span>
         <span class="monto" id="deuda-info-pendiente"></span>
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar-container">
+                <div class="progress-bar"></div>
+            </div>
+            <span id="progress-text" class="progress-text">0%</span>
+        </div>
+        <div class="deuda-proyeccion">
+            <span class="label-proyeccion">Promedio de pago: <span class="valor-proyeccion" id="promedio-pago">--</span></span>
+            <span class="label-proyeccion">Días entre pagos: <span class="valor-proyeccion" id="promedio-dias">--</span></span>
+            <span class="label-proyeccion">Fecha de liquidación estimada: <span class="valor-proyeccion" id="fecha-liquidación">--</span></span>
+        </div>
         <div class="input-area" style="grid-template-columns: 1fr auto;">
             <input type="number" id="deuda-pago-monto" placeholder="Monto a pagar" />
             <button class="btn" id="btn-registrar-pago">✅ Pagar</button>
@@ -1075,6 +1138,13 @@ body {
     const $deudaPagoMonto = document.getElementById('deuda-pago-monto');
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
     const $pagosLista = document.getElementById('pagos-lista');
+    // Nuevos elementos para la proyección
+    const $promedioPago = document.getElementById('promedio-pago');
+    const $promedioDias = document.getElementById('promedio-dias');
+    const $fechaLiquidacion = document.getElementById('fecha-liquidación');
+    const $progressBar = document.querySelector('#progress-bar .progress-bar');
+    const $progressText = document.getElementById('progress-text');
+
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -1893,9 +1963,63 @@ body {
         $deudaInfoNombre.textContent = deuda.nombre;
         $deudaInfoPendiente.textContent = `Pendiente: ${fmt.format(deuda.montoPendiente)} de ${fmt.format(deuda.montoOriginal)}`;
         
+        // Calcular y mostrar la proyección
+        const { avgPago, avgDias, fechaEstimada, porcentajePagado } = calcularProyeccionDeuda(deuda);
+        $promedioPago.textContent = fmt.format(avgPago);
+        $promedioDias.textContent = isNaN(avgDias) ? '--' : `${avgDias.toFixed(1)} días`;
+        $fechaLiquidacion.textContent = fechaEstimada;
+        
+        // Actualizar la barra de progreso
+        $progressBar.style.width = `${porcentajePagado}%`;
+        $progressText.textContent = `${porcentajePagado.toFixed(1)}%`;
+        
         renderPagosDeuda(deuda);
     }
     
+    // --- Nuevas funciones de proyección de deudas ---
+    function calcularProyeccionDeuda(deuda) {
+        const pagos = deuda.pagos.sort((a,b) => a.ts - b.ts);
+        
+        if (pagos.length === 0) {
+            return {
+                avgPago: 0,
+                avgDias: NaN,
+                fechaEstimada: 'Sin pagos registrados',
+                porcentajePagado: 0
+            };
+        }
+        
+        // 1. Calcular promedio de pago
+        const totalPagado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
+        const avgPago = totalPagado / pagos.length;
+        
+        // 2. Calcular promedio de días entre pagos
+        let totalDias = 0;
+        for (let i = 1; i < pagos.length; i++) {
+            totalDias += (pagos[i].ts - pagos[i-1].ts) / (1000 * 60 * 60 * 24);
+        }
+        const avgDias = pagos.length > 1 ? totalDias / (pagos.length - 1) : NaN;
+        
+        // 3. Proyectar fecha de liquidación
+        let fechaEstimada = 'No hay suficiente historial';
+        if (!isNaN(avgPago) && !isNaN(avgDias) && deuda.montoPendiente > 0) {
+            const pagosRestantes = Math.ceil(deuda.montoPendiente / avgPago);
+            const diasRestantes = pagosRestantes * avgDias;
+            const fechaUltimoPago = new Date(pagos[pagos.length-1].ts);
+            const fechaFinal = new Date(fechaUltimoPago.getTime() + diasRestantes * (1000 * 60 * 60 * 24));
+            fechaEstimada = fechaFinal.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+        } else if (!isNaN(avgPago) && deuda.montoPendiente > 0) {
+             const pagosRestantes = Math.ceil(deuda.montoPendiente / avgPago);
+             fechaEstimada = `Aprox. ${pagosRestantes} pagos`;
+        }
+
+        // 4. Calcular porcentaje pagado
+        const porcentajePagado = ((deuda.montoOriginal - deuda.montoPendiente) / deuda.montoOriginal) * 100;
+
+        return { avgPago, avgDias, fechaEstimada, porcentajePagado };
+    }
+    // --- Fin de las nuevas funciones ---
+
     function renderPagosDeuda(deuda) {
         $pagosLista.innerHTML = '';
         deuda.pagos.sort((a, b) => b.ts - a.ts).forEach(pago => {
@@ -1983,7 +2107,7 @@ body {
     $btnGuardarTicket.addEventListener('click', guardarTicket);
     $btnHistorialMandado.addEventListener('click', mostrarHistorialMandados);
     $btnVolverHistorial.addEventListener('click', () => mostrarPantalla('mandado-screen'));
-    $btnVolverDetalle.addEventListener('click', mostrarHistorialMandados);
+    $btnVolverDetalle.addEventListener('click', () => mostrarHistorialMandados(true));
     $themeSwitcher.addEventListener('click', toggleTheme);
     $addCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'flex');
     $cancelCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'none');
