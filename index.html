@@ -1493,15 +1493,14 @@ body {
             state.registros.forEach(r => {
                 const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
                 // Tipos de transacción que son considerados gastos
-                const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
-                // Retiros de efectivo que se consideran gastos
-                const esRetiroEfectivo = r.tipo === "Efectivo" && r.monto < 0;
-
-                const esGastoValido = (esGasto || esRetiroEfectivo);
+                const esGastoGeneral = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
+                // Gastos de efectivo, que tienen un tipo que comienza con "Efectivo: " y un monto negativo
+                const esGastoEfectivo = r.tipo.startsWith("Efectivo: ") && r.monto < 0;
+                
+                const esGastoValido = esGastoGeneral || esGastoEfectivo;
                 
                 if (esGastoValido && fechaRegistro >= inicioSemanaActual) {
-                    // Si es un retiro de efectivo, sumamos el valor absoluto
-                    const montoGasto = esRetiroEfectivo ? Math.abs(r.monto) : r.monto;
+                    const montoGasto = Math.abs(r.monto);
                     gastosSemanales += montoGasto;
                 }
             });
@@ -1639,9 +1638,7 @@ body {
           state.saldo -= monto;
       } else {
           // =========================================================================
-          // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
-          // Y se eliminó la línea que sumaba el gasto a `state.gastos` en este punto.
-          // La métrica de gastos ahora se calculará en `renderResumen()`.
+          // ✅ CAMBIO: Ya no se suma a state.gastos aquí. El cálculo se hace en renderResumen()
           // =========================================================================
           state.saldo -= monto;
           
