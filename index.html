@@ -74,6 +74,12 @@ body {
       --accent-green: #66bb6a;
       --accent-red: #ef5350;
       --accent-blue: #4fc3f7;
+      
+      /* Colores para categorías de mandado */
+      --color-higiene-personal: #42a5f5; /* Azul */
+      --color-frutas-verduras: #66bb6a; /* Verde */
+      --color-carnes: #ef5350; /* Rojo */
+      --color-otros: #a9a9a9; /* Gris */
     }
 
     [data-theme="light"] {
@@ -92,6 +98,12 @@ body {
       --accent-green: #2e7d32;
       --accent-red: #c62828;
       --accent-blue: #0277bd;
+      
+      /* Colores para categorías de mandado (tema claro) */
+      --color-higiene-personal: #1976d2;
+      --color-frutas-verduras: #388e3c;
+      --color-carnes: #c62828;
+      --color-otros: #666666;
     }
 
     /* ====== RESET & BASE ====== */
@@ -314,6 +326,12 @@ body {
       flex: 1;
       color: var(--text-light);
     }
+    /* Estilos para el color de la fuente del nombre del artículo del mandado */
+    #mandado-screen #lista-mandado li .nombre.higiene { color: var(--color-higiene-personal); }
+    #mandado-screen #lista-mandado li .nombre.frutas { color: var(--color-frutas-verduras); }
+    #mandado-screen #lista-mandado li .nombre.carnes { color: var(--color-carnes); }
+    #mandado-screen #lista-mandado li .nombre.otros { color: var(--color-otros); }
+    
     #mandado-screen #lista-mandado li .cantidad,
     #mandado-detalle-lista li .cantidad {
         font-size: 13px;
@@ -872,6 +890,20 @@ body {
         ],
         "Otros": ["Otros"]
     };
+    
+    // Función para obtener el color de la categoría
+    function obtenerColorCategoria(categoria) {
+        switch(categoria) {
+            case "Higiene Personal":
+                return "higiene";
+            case "Frutas y Verduras":
+                return "frutas";
+            case "Carnes":
+                return "carnes";
+            default:
+                return "otros";
+        }
+    }
 
     function inicioSemanaJueves(fecha) {
       const d = new Date(fecha);
@@ -1547,8 +1579,9 @@ body {
         mandadoTicket.items.forEach((item, index) => {
             const li = document.createElement('li');
             const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : `${item.cantidad} pz`;
+            const colorClass = obtenerColorCategoria(item.categoria);
             li.innerHTML = `
-                <span class="nombre">${item.nombre}</span>
+                <span class="nombre ${colorClass}">${item.nombre}</span>
                 <span class="cantidad">${cantidadDisplay}</span>
                 <span class="precio">${fmt.format(item.monto)}</span>
                 <div class="actions">
@@ -1631,7 +1664,8 @@ body {
         ticket.items.forEach(item => {
             const li = document.createElement('li');
             const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : `${item.cantidad} pz`;
-            li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="cantidad">${cantidadDisplay}</span><span class="precio">${fmt.format(item.monto)}</span>`;
+            const colorClass = obtenerColorCategoria(item.categoria);
+            li.innerHTML = `<span class="nombre ${colorClass}">${item.nombre}</span><span class="cantidad">${cantidadDisplay}</span><span class="precio">${fmt.format(item.monto)}</span>`;
             $mandadoDetalleLista.appendChild(li);
         });
     }
@@ -1843,7 +1877,7 @@ body {
     $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
     $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
-    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deuda-detalle-screen'));
+    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen')); // Corregido: regresa a la pantalla de deudas
     $btnRegistrarPago.addEventListener('click', registrarPago);
     
     // Delegación de eventos para los botones de editar y eliminar
