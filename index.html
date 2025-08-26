@@ -532,14 +532,15 @@ body {
     }
     
     #pagos-lista li .actions .btn {
-      width: 28px;
-      height: 28px;
-      padding: 0;
-      font-size: 12px;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+        /* Ajuste de tamaño para los botones del historial de pagos */
+        width: 24px;
+        height: 24px;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     /* ====== GRAFICO CIRCULAR ====== */
@@ -1180,6 +1181,27 @@ body {
 
         const index = state.registros.findIndex(r => r.id == id);
         if (index === -1) {
+            // Buscamos si es un pago de deuda
+            const debtPaymentIdMatch = id.match(/^pago-(\d+)-(\d+)$/);
+            if (debtPaymentIdMatch) {
+                const [, debtId, pagoId] = debtPaymentIdMatch;
+                const deudaIndex = state.deudas.findIndex(d => d.id == debtId);
+                if (deudaIndex !== -1) {
+                    const pagoIndex = state.deudas[deudaIndex].pagos.findIndex(p => p.id == pagoId);
+                    if (pagoIndex !== -1) {
+                        const montoPago = state.deudas[deudaIndex].pagos[pagoIndex].monto;
+                        state.deudas[deudaIndex].montoPendiente += montoPago;
+                        state.deudas[deudaIndex].pagos.splice(pagoIndex, 1);
+                        state.registros.splice(index, 1);
+                        
+                        await persist();
+                        renderResumen();
+                        renderHistorial();
+                        mostrarNotificacion("🗑️ Registro de pago eliminado");
+                        return;
+                    }
+                }
+            }
             mostrarNotificacion("❌ Registro no encontrado", 'error');
             return;
         }
@@ -1796,7 +1818,7 @@ body {
         deuda.pagos.sort((a, b) => b.ts - a.ts).forEach(pago => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="nombre">Pago</span><span class="monto">${fmt.format(pago.monto)}</span><span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>
-            <div class="actions"><button class="btn secundario delete-pago-btn" data-pago-ts="${pago.ts}">🗑️</button></div>`;
+            <div class="actions"><button class="btn secundario delete-pago-btn" data-pago-id="${pago.id}">🗑️</button></div>`;
             $pagosLista.appendChild(li);
         });
     }
@@ -1823,14 +1845,11 @@ body {
         const pago = {
             monto: montoPago,
             ts: now.getTime(),
-            id: now.getTime() // Se añade un ID único al pago
+            id: now.getTime()
         };
         
         deuda.montoPendiente -= montoPago;
         deuda.pagos.push(pago);
-        
-        // Registrar el pago como un gasto en el historial principal
-        await agregarRegistro(`Pago ${deuda.nombre}`, montoPago, `pago-${deuda.id}-${pago.id}`);
         
         await persist();
         mostrarNotificacion(`✅ Pago de ${fmt.format(montoPago)} registrado`);
@@ -1838,7 +1857,7 @@ body {
         $deudaPagoMonto.value = '';
     }
 
-    async function eliminarPago(pagoTs) {
+    async function eliminarPago(pagoId) {
         if (!confirm('¿Estás seguro de que quieres eliminar este pago?')) {
             return;
         }
@@ -1849,7 +1868,7 @@ body {
             return;
         }
         
-        const pagoIndex = deuda.pagos.findIndex(p => p.ts == pagoTs);
+        const pagoIndex = deuda.pagos.findIndex(p => p.id == pagoId);
         if (pagoIndex === -1) {
             mostrarNotificacion("Pago no encontrado", 'error');
             return;
@@ -1859,9 +1878,6 @@ body {
         deuda.montoPendiente += pago.monto;
         deuda.pagos.splice(pagoIndex, 1);
         
-        // Eliminar el registro del pago en el historial principal
-        await eliminarRegistro(`pago-${deuda.id}-${pago.id}`);
-
         await persist();
         mostrarNotificacion("🗑️ Pago eliminado");
         mostrarDetalleDeuda(currentDebtId);
@@ -1943,8 +1959,8 @@ body {
         const btn = event.target.closest('.delete-pago-btn');
         if (!btn) return;
 
-        const pagoTs = parseInt(btn.dataset.pagoTs);
-        eliminarPago(pagoTs);
+        const pagoId = parseInt(btn.dataset.pagoId);
+        eliminarPago(pagoId);
     });
 
     initFirestore(); // ¡Inicia la app con la conexión a Firebase!
