@@ -783,17 +783,12 @@ body {
   
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script type="module">
+    // Importa las funciones que necesitas del SDKs modular
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-<script>
-
-    // Import the functions you need from the SDKs you need
-    import { initializeApp } from "firebase/app";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
-
-    // Your web app's Firebase configuration
+    // Tu configuración de la aplicación web de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDRq70PInWyj7pjYPGGqMQWaVe_tbrwebI",
       authDomain: "mi-control-financiero-9099a.firebaseapp.com",
@@ -803,12 +798,9 @@ body {
       appId: "1:275253747474:web:d696e1c786bd58c9799dcb"
     };
 
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-
     // Inicializa Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
     const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
     const mesesLargos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -988,22 +980,21 @@ body {
 
     // Funciones de sincronización con Firestore
     async function initFirestore() {
-      // Usar 'doc' en lugar de 'collection' para un único documento con todo el estado.
-      const docRef = db.collection("finanzas").doc("estado_principal");
-      const doc = await docRef.get();
-      if (!doc.exists) {
+      const docRef = doc(db, "finanzas", "estado_principal");
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
         // Inicializar la base de datos si no existe
         state = { saldo: 0, ahorro: 0, gastos: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [] };
-        await docRef.set(state);
+        await setDoc(docRef, state);
       } else {
-        state = doc.data();
+        state = docSnap.data();
         // Asegúrate de que los arrays existan si son nuevos campos
         if (!state.deudas) state.deudas = [];
         if (!state.registros) state.registros = [];
         if (!state.mandadoTickets) state.mandadoTickets = [];
         if (!state.customCategories) state.customCategories = [];
         // Reconvertir timestamps de Firestore a objetos Date
-        state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof firebase.firestore.Timestamp ? r.ts.toDate().getTime() : r.ts }));
+        state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       }
       
       aplicarCortesPendientes();
@@ -1014,10 +1005,10 @@ body {
     
     async function persist() {
         state.deudasTotal = calcularDeudasTotal();
-        const docRef = db.collection("finanzas").doc("estado_principal");
+        const docRef = doc(db, "finanzas", "estado_principal");
         // Asegúrate de que los timestamps sean compatibles con Firestore
-        const stateToSave = { ...state, registros: state.registros.map(r => ({ ...r, ts: firebase.firestore.Timestamp.fromMillis(r.ts) })) };
-        await docRef.set(stateToSave);
+        const stateToSave = { ...state, registros: state.registros.map(r => ({ ...r, ts: Timestamp.fromMillis(r.ts) })) };
+        await setDoc(docRef, stateToSave);
     }
     
     function calcularDeudasTotal() {
@@ -1142,7 +1133,7 @@ body {
       if (!state.registros) return [];
       const grupos = new Map();
       // Asegúrate de que los timestamps sean números
-      const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof firebase.firestore.Timestamp ? r.ts.toDate().getTime() : r.ts }));
+      const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       
       for (const r of registrosConFechas) {
         const inicio = inicioSemanaJueves(r.ts);
@@ -1156,7 +1147,7 @@ body {
     function agruparPorMes() {
         if (!state.registros) return [];
         const grupos = new Map();
-        const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof firebase.firestore.Timestamp ? r.ts.toDate().getTime() : r.ts }));
+        const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         
         for (const r of registrosConFechas) {
             const mesAno = obtenerMesAno(r.ts);
@@ -1253,7 +1244,7 @@ body {
     function renderLineChart() {
         const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE");
         const gastosPorFecha = gastos.reduce((acc, curr) => {
-            const date = new Date(curr.ts instanceof firebase.firestore.Timestamp ? curr.ts.toDate() : curr.ts).toISOString().slice(0, 10);
+            const date = new Date(curr.ts instanceof Timestamp ? curr.ts.toDate() : curr.ts).toISOString().slice(0, 10);
             if (!acc[date]) acc[date] = 0;
             acc[date] += curr.monto;
             return acc;
