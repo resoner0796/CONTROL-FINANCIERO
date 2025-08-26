@@ -1748,8 +1748,8 @@ body {
     function agruparPorSemana() {
       if (!state.registros) return [];
       const grupos = new Map();
-      // Filtramos los registros de efectivo para el historial principal
-      const registrosFiltrados = state.registros.filter(r => r.tipo !== "Efectivo" && !esGastoEfectivo(r.tipo));
+      // ✅ AJUSTE 2: Se modifica el filtro para no ocultar el retiro de efectivo del historial general.
+      const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
       const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       
       for (const r of registrosConFechas) {
@@ -1763,7 +1763,8 @@ body {
     
     function agruparPorMes() {
         if (!state.registros) return [];
-        const registrosFiltrados = state.registros.filter(r => r.tipo !== "Efectivo" && !esGastoEfectivo(r.tipo));
+        // ✅ AJUSTE 2: Se modifica el filtro para no ocultar el retiro de efectivo del historial general.
+        const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
         const grupos = new Map();
         const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         
@@ -2651,7 +2652,11 @@ body {
     });
     
     // EVENTOS DE LA NUEVA PANTALLA DE EFECTIVO
-    $btnIrEfectivo.addEventListener('click', () => mostrarPantalla('efectivo-screen'));
+    // ✅ AJUSTE 1: Se agrega la llamada a renderHistorialEfectivo() para que la lista se cargue siempre.
+    $btnIrEfectivo.addEventListener('click', () => { 
+        mostrarPantalla('efectivo-screen');
+        renderHistorialEfectivo(); 
+    });
     $btnVolverEfectivo.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)));
     $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)); });
