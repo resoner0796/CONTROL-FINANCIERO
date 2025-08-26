@@ -1493,15 +1493,15 @@ body {
             state.registros.forEach(r => {
                 const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
                 // Tipos de transacción que son considerados gastos
-                const esGastoGeneral = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
-                // Gastos de efectivo, que tienen un tipo que comienza con "Efectivo: " y un monto negativo
+                const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
+                // Retiros de efectivo que se consideran gastos
                 const esGastoEfectivo = r.tipo.startsWith("Efectivo: ") && r.monto < 0;
-                
-                const esGastoValido = esGastoGeneral || esGastoEfectivo;
+
+                const esGastoValido = (esGasto || esGastoEfectivo);
                 
                 if (esGastoValido && fechaRegistro >= inicioSemanaActual) {
-                    const montoGasto = Math.abs(r.monto);
-                    gastosSemanales += montoGasto;
+                    // Sumamos el valor absoluto del gasto
+                    gastosSemanales += Math.abs(r.monto);
                 }
             });
         }
@@ -1638,7 +1638,9 @@ body {
           state.saldo -= monto;
       } else {
           // =========================================================================
-          // ✅ CAMBIO: Ya no se suma a state.gastos aquí. El cálculo se hace en renderResumen()
+          // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
+          // Y se eliminó la línea que sumaba el gasto a `state.gastos` en este punto.
+          // La métrica de gastos ahora se calculará en `renderResumen()`.
           // =========================================================================
           state.saldo -= monto;
           
@@ -2118,7 +2120,7 @@ body {
         }
 
         if (categoria === "Frutas y Verduras") {
-            cantidad = parseFloat($mandadoPeso.value);
+            cantidad = parseFloat($mandado-peso.value);
             if (isNaN(cantidad) || cantidad <= 0) {
                 mostrarNotificacion("❗ Ingresa un peso válido", 'error');
                 return;
@@ -2152,7 +2154,7 @@ body {
             mandadoTicket.items[editIndex] = articulo;
             
             editIndex = null;
-            $btnAgregarArticulo.textContent = "➕ Agregar";
+            $btnAgregarArticulo.textContent = "✅ Actualizar";
         } else {
             mandadoTicket.items.push(articulo);
             mandadoTicket.total += articulo.monto;
