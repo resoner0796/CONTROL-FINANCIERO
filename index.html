@@ -761,9 +761,9 @@ body {
           <input type="text" id="nombre-articulo" placeholder="Nombre del artículo" style="display: none;">
 
           <div class="grid-inputs">
-              <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" step="0.01" style="display: none;">
-              <input type="number" id="mandado-cantidad" placeholder="Cantidad" step="1" style="display: none;">
-              <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" step="0.01" style="display: none;">
+              <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" step="0.01" style="display: none;" inputmode="numeric" pattern="[0-9]*">
+              <input type="number" id="mandado-cantidad" placeholder="Cantidad" step="1" style="display: none;" inputmode="numeric" pattern="[0-9]*">
+              <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" step="0.01" style="display: none;" inputmode="numeric" pattern="[0-9]*">
           </div>
           <button class="btn" id="btn-agregar-articulo" style="display: none;">➕ Agregar</button>
       </div>
