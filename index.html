@@ -698,6 +698,7 @@ body {
 
           <div class="grid-inputs">
               <input type="number" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" step="0.01" style="display: none;">
+              <input type="number" id="mandado-cantidad" placeholder="Cantidad" step="1" style="display: none;">
               <input type="number" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" step="0.01" style="display: none;">
           </div>
           <button class="btn" id="btn-agregar-articulo" style="display: none;">➕ Agregar</button>
@@ -908,6 +909,7 @@ body {
     const $mandadoProducto = document.getElementById('mandado-producto');
     const $nombreArticulo = document.getElementById('nombre-articulo');
     const $mandadoPeso = document.getElementById('mandado-peso');
+    const $mandadoCantidad = document.getElementById('mandado-cantidad'); // NUEVO
     const $mandadoPrecio = document.getElementById('mandado-precio');
     const $btnAgregarArticulo = document.getElementById('btn-agregar-articulo');
     const $listaMandado = document.getElementById('lista-mandado');
@@ -922,6 +924,7 @@ body {
     const $btnVolverDetalle = document.getElementById('btn-volver-detalle');
     const $detalleTitulo = document.getElementById('detalle-titulo');
     const $detalleTotal = document.getElementById('detalle-total');
+    const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista'); // Agregado
     const $themeSwitcher = document.getElementById('theme-switcher');
     const $addCategoryBtn = document.getElementById('add-category-btn');
     const $addCategoryModal = document.getElementById('add-category-modal');
@@ -1341,8 +1344,10 @@ body {
     }
     function mostrarPantallaMandado() {
         mostrarPantalla('mandado-screen');
-        limpiarFormularioMandado();
+        // Aquí se limpia el formulario al volver o al iniciar un nuevo mandado
+        limpiarFormularioMandado(); 
     }
+    // REPARACIÓN 1: Reinicia la variable mandadoTicket
     function limpiarFormularioMandado() {
         mandadoTicket = { items: [], total: 0 };
         editIndex = null;
@@ -1351,6 +1356,7 @@ body {
         $mandadoProducto.style.display = 'none';
         $nombreArticulo.style.display = 'none';
         $mandadoPeso.style.display = 'none';
+        $mandadoCantidad.style.display = 'none';
         $mandadoPrecio.style.display = 'none';
         $btnAgregarArticulo.style.display = 'none';
         $btnAgregarArticulo.textContent = "➕ Agregar";
@@ -1370,18 +1376,22 @@ body {
             });
             $mandadoProducto.style.display = (categoria === 'Otros') ? 'none' : 'block';
             $nombreArticulo.style.display = (categoria === 'Otros') ? 'block' : 'none';
+            // REPARACIÓN 2: Lógica para mostrar/ocultar campos de peso y cantidad
             $mandadoPeso.style.display = (categoria === 'Frutas y Verduras') ? 'block' : 'none';
+            $mandadoCantidad.style.display = (categoria === 'Abarrotes' || categoria === 'Higiene Personal') ? 'block' : 'none';
             $mandadoPrecio.style.display = 'block';
             $btnAgregarArticulo.style.display = 'block';
         } else {
             $mandadoProducto.style.display = 'none';
             $nombreArticulo.style.display = 'none';
             $mandadoPeso.style.display = 'none';
+            $mandadoCantidad.style.display = 'none';
             $mandadoPrecio.style.display = 'none';
             $btnAgregarArticulo.style.display = 'none';
         }
     }
     
+    // REPARACIÓN 3: Lógica para calcular el monto con cantidad
     function agregarArticulo() {
         const categoria = $mandadoCategoria.value;
         let nombre = '';
@@ -1400,24 +1410,32 @@ body {
             return;
         }
 
+        const precio = parseFloat($mandadoPrecio.value);
+        if (isNaN(precio) || precio <= 0) {
+            mostrarNotificacion("❗ Ingresa un precio válido", 'error');
+            return;
+        }
+
         if (categoria === "Frutas y Verduras") {
-            const peso = parseFloat($mandadoPeso.value);
-            const precio = parseFloat($mandadoPrecio.value);
-            if (isNaN(peso) || isNaN(precio) || peso <= 0 || precio <= 0) {
-                mostrarNotificacion("❗ Ingresa peso y precio válidos", 'error');
+            cantidad = parseFloat($mandadoPeso.value);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                mostrarNotificacion("❗ Ingresa un peso válido", 'error');
                 return;
             }
-            monto = peso * precio;
-            cantidad = peso;
+            monto = cantidad * precio;
             unidad = "kg";
-        } else {
-            const precio = parseFloat($mandadoPrecio.value);
-            if (isNaN(precio) || precio <= 0) {
-                mostrarNotificacion("❗ Ingresa un precio válido", 'error');
+        } else if (categoria === "Abarrotes" || categoria === "Higiene Personal") {
+            cantidad = parseInt($mandadoCantidad.value);
+            if (isNaN(cantidad) || cantidad <= 0) {
+                mostrarNotificacion("❗ Ingresa una cantidad válida", 'error');
                 return;
             }
-            monto = precio;
+            monto = cantidad * precio;
+            unidad = "pz";
+        } else {
+            // Carnes y otros se manejan por pieza
             cantidad = 1;
+            monto = precio;
             unidad = "pz";
         }
         
@@ -1442,8 +1460,10 @@ body {
         $nombreArticulo.value = '';
         $nombreArticulo.style.display = 'none';
         $mandadoPeso.value = '';
+        $mandadoCantidad.value = '';
         $mandadoPrecio.value = '';
         $mandadoPeso.style.display = 'none';
+        $mandadoCantidad.style.display = 'none';
         $mandadoPrecio.style.display = 'none';
         $btnAgregarArticulo.style.display = 'none';
     }
@@ -1475,6 +1495,9 @@ body {
         if (item.unidad === "kg") {
             $mandadoPeso.value = item.cantidad;
             $mandadoPrecio.value = (item.monto / item.cantidad).toFixed(2);
+        } else if (item.unidad === "pz") {
+            $mandadoCantidad.value = item.cantidad;
+            $mandadoPrecio.value = (item.monto / item.cantidad).toFixed(2);
         } else {
             $mandadoPrecio.value = item.monto;
         }
@@ -1487,7 +1510,7 @@ body {
         $listaMandado.innerHTML = '';
         mandadoTicket.items.forEach((item, index) => {
             const li = document.createElement('li');
-            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : item.cantidad;
+            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : `${item.cantidad} pz`;
             li.innerHTML = `
                 <span class="nombre">${item.nombre}</span>
                 <span class="cantidad">${cantidadDisplay}</span>
@@ -1523,6 +1546,8 @@ body {
         await persist();
         mostrarNotificacion("✅ Ticket guardado en el historial");
         mostrarPantalla('main-screen');
+        // REPARACIÓN 1: Limpia el formulario después de guardar
+        limpiarFormularioMandado();
     }
 
     function mostrarHistorialMandados() {
@@ -1537,6 +1562,7 @@ body {
         });
     }
 
+    // REPARACIÓN 3: Se muestra la lista de artículos
     function mostrarDetalleMandado(id) {
         const ticket = (state.mandadoTickets || []).find(t => t.id == id);
         if (!ticket) {
@@ -1550,7 +1576,7 @@ body {
         $mandadoDetalleLista.innerHTML = '';
         ticket.items.forEach(item => {
             const li = document.createElement('li');
-            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : item.cantidad;
+            const cantidadDisplay = item.unidad === 'kg' ? `${item.cantidad} kg` : `${item.cantidad} pz`;
             li.innerHTML = `<span class="nombre">${item.nombre}</span><span class="cantidad">${cantidadDisplay}</span><span class="precio">${fmt.format(item.monto)}</span>`;
             $mandadoDetalleLista.appendChild(li);
         });
@@ -1704,8 +1730,8 @@ body {
     $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     
     // Eventos de la nueva funcionalidad
-    $btnMandado.addEventListener('click', () => mostrarPantalla('mandado-screen'));
-    $btnVolverMandado.addEventListener('click', () => mostrarPantalla('main-screen'));
+    $btnMandado.addEventListener('click', mostrarPantallaMandado); // Usa la nueva función
+    $btnVolverMandado.addEventListener('click', () => { mostrarPantalla('main-screen'); limpiarFormularioMandado(); }); // Llama a la nueva función
     $mandadoCategoria.addEventListener('change', actualizarProductosDropdown);
     $btnAgregarArticulo.addEventListener('click', agregarArticulo);
     $btnGuardarTicket.addEventListener('click', guardarTicket);
