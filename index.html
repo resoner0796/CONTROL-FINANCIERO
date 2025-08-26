@@ -1591,11 +1591,29 @@ body {
         $mandadoHistorialLista.innerHTML = '';
         (state.mandadoTickets || []).sort((a, b) => b.id - a.id).forEach(ticket => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">Ticket del ${ticket.fecha}</span><span class="precio">${fmt.format(ticket.total)}</span>`;
+            li.innerHTML = `<span class="nombre">Ticket del ${ticket.fecha}</span><span class="precio">${fmt.format(ticket.total)}</span>
+              <div class="actions"><button class="btn secundario delete-ticket-btn" data-id="${ticket.id}">🗑️</button></div>`;
             li.dataset.id = ticket.id;
-            // No agregamos el event listener aquí, lo hacemos con delegación
             $mandadoHistorialLista.appendChild(li);
         });
+    }
+
+    // NEW: Function to delete a grocery ticket
+    async function eliminarTicketMandado(id) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este ticket?')) {
+            return;
+        }
+
+        const index = state.mandadoTickets.findIndex(t => t.id == id);
+        if (index === -1) {
+            mostrarNotificacion("❌ Ticket no encontrado", 'error');
+            return;
+        }
+
+        state.mandadoTickets.splice(index, 1);
+        await persist();
+        mostrarNotificacion("🗑️ Ticket eliminado");
+        mostrarHistorialMandados(); // Re-render the list
     }
 
     // REPARACIÓN 3: Se muestra la lista de artículos
@@ -1825,7 +1843,7 @@ body {
     $addDebtBtn.addEventListener('click', mostrarPantallaDeudas);
     $btnVolverDeudas.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
-    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen'));
+    $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deuda-detalle-screen'));
     $btnRegistrarPago.addEventListener('click', registrarPago);
     
     // Delegación de eventos para los botones de editar y eliminar
@@ -1844,12 +1862,17 @@ body {
 
     // Delegación de eventos para la lista de historial de mandados
     $mandadoHistorialLista.addEventListener('click', (event) => {
-        const li = event.target.closest('li');
-        if (!li) return;
-
-        const id = li.dataset.id;
-        if (id) {
-            mostrarDetalleMandado(id);
+        const btn = event.target.closest('.delete-ticket-btn');
+        if (btn) {
+            const id = btn.dataset.id;
+            eliminarTicketMandado(id);
+        } else {
+            const li = event.target.closest('li');
+            if (!li) return;
+            const id = li.dataset.id;
+            if (id) {
+                mostrarDetalleMandado(id);
+            }
         }
     });
 
