@@ -1849,13 +1849,10 @@ body {
             });
             $contenedorSemanasEfectivo.appendChild(divSemana);
         }
-        
-        // Se mueve el event listener a una delegación de eventos para evitar duplicados.
     }
 
     function renderChart() {
         const gastos = (state.registros || []).filter(r => {
-            // ✅ AJUSTE 1: Se agrega "Efectivo" a la lista de conceptos a graficar.
             const tipoGastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
             return tipoGastos.includes(r.tipo) && r.monto > 0;
         });
@@ -1995,11 +1992,16 @@ body {
             $mainPanel.classList.add('hidden');
         }
 
-        // ✅ AJUSTE 2: Llamada al renderizado específico de la pantalla para asegurar que siempre se actualice.
+        // =========================================================================
+        // AQUÍ ESTÁ LA CORRECCIÓN
+        // Se asegura de que el historial de efectivo se renderice CADA VEZ que
+        // se entra a esa pantalla.
+        // =========================================================================
         if (id === 'efectivo-screen') {
             renderHistorialEfectivo();
         }
     }
+
     function mostrarPantallaMandado() {
         mostrarPantalla('mandado-screen');
         limpiarFormularioMandado(); 
