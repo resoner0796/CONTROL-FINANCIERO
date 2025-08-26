@@ -1493,8 +1493,8 @@ body {
                 <span class="cantidad">${cantidadDisplay}</span>
                 <span class="precio">${fmt.format(item.monto)}</span>
                 <div class="actions">
-                    <button class="btn secundario" onclick="editarArticuloDelTicket(${index})">✏️</button>
-                    <button class="btn secundario" onclick="eliminarArticuloDelTicket(${index})">🗑️</button>
+                    <button class="btn secundario edit-item" data-index="${index}">✏️</button>
+                    <button class="btn secundario delete-item" data-index="${index}">🗑️</button>
                 </div>
             `;
             $listaMandado.appendChild(li);
@@ -1734,6 +1734,20 @@ body {
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
     $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen'));
     $btnRegistrarPago.addEventListener('click', registrarPago);
+    
+    // Delegación de eventos para los botones de editar y eliminar
+    $listaMandado.addEventListener('click', (event) => {
+        const btn = event.target.closest('.edit-item, .delete-item');
+        if (!btn) return;
+        
+        const index = parseInt(btn.dataset.index);
+        
+        if (btn.classList.contains('edit-item')) {
+            editarArticuloDelTicket(index);
+        } else if (btn.classList.contains('delete-item')) {
+            eliminarArticuloDelTicket(index);
+        }
+    });
 
     initFirestore(); // ¡Inicia la app con la conexión a Firebase!
 
