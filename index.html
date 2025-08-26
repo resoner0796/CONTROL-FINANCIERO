@@ -1476,9 +1476,32 @@ body {
     function renderResumen() {
       $saldo.textContent  = fmt.format(state.saldo || 0);
       $ahorro.textContent = fmt.format(state.ahorro || 0);
-      $gastos.textContent = fmt.format(state.gastos || 0);
+      // ✅ CORRECCIÓN: Aquí se llama a la nueva función para calcular los gastos semanales
+      $gastos.textContent = fmt.format(calcularGastosSemanales());
       $deudasTotal.textContent = fmt.format(calcularDeudasTotal());
       $efectivoTotal.textContent = fmt.format(state.efectivo || 0);
+    }
+    
+    // ✅ NUEVA FUNCIÓN: Para calcular los gastos de la semana en curso
+    function calcularGastosSemanales() {
+        const hoy = new Date();
+        const inicioSemanaActual = inicioSemanaJueves(hoy);
+        let gastosSemanales = 0;
+        
+        if (state.registros) {
+            state.registros.forEach(r => {
+                const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
+                const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
+                
+                // Asegurarse de que no sea un gasto de efectivo y que el monto sea positivo
+                const esGastoValido = esGasto && r.monto > 0;
+                
+                if (esGastoValido && fechaRegistro >= inicioSemanaActual) {
+                    gastosSemanales += r.monto;
+                }
+            });
+        }
+        return gastosSemanales;
     }
 
     // Funciones de sincronización con Firestore
@@ -1608,11 +1631,10 @@ body {
       } else {
           // =========================================================================
           // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
+          // Y se eliminó la línea que sumaba el gasto a `state.gastos` en este punto.
+          // La métrica de gastos ahora se calculará en `renderResumen()`.
           // =========================================================================
-          if (!isEfectivo) {
-              state.gastos += monto;
-              state.saldo -= monto;
-          }
+          state.saldo -= monto;
           
           const pagoMensual = state.pagosMensuales.find(p => p.nombre === tipo);
           if (pagoMensual) {
@@ -1717,7 +1739,6 @@ body {
             // =========================================================================
             // ✅ CAMBIO: Revertir un gasto general
             // =========================================================================
-            state.gastos -= monto;
             state.saldo += monto;
         }
 
@@ -2098,7 +2119,7 @@ body {
             monto = cantidad * precio;
             unidad = "kg";
         } else if (categoria === "Abarrotes" || categoria === "Higiene Personal" || categoria === "Carnes") {
-            cantidad = parseInt($mandadoCantidad.value);
+            cantidad = parseInt($mandado-cantidad.value);
             if (isNaN(cantidad) || cantidad <= 0) {
                 mostrarNotificacion("❗ Ingresa una cantidad válida", 'error');
                 return;
