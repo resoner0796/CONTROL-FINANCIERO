@@ -442,6 +442,33 @@ body {
     }
     #mandado-screen .total-container .valor,
     #mandado-historial-screen .total-container .valor { color: var(--accent-green); }
+    
+    /* === NUEVOS ESTILOS PARA TOTALES POR CATEGORÍA === */
+    #mandado-categoria-totales {
+        width: 100%;
+        max-width: 560px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+        padding: 14px;
+        border-radius: 12px;
+        background: var(--card-bg);
+    }
+    
+    .categoria-total {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 15px;
+    }
+    .categoria-total .nombre {
+        font-weight: 600;
+    }
+    .categoria-total .monto {
+        font-weight: 600;
+    }
+    /* === FIN NUEVOS ESTILOS === */
 
     /* ====== HISTORIAL & GRAFICO ====== */
     #historial {
@@ -794,6 +821,9 @@ body {
           <span class="valor" id="total-ticket">$0.00</span>
       </div>
 
+      <div id="mandado-categoria-totales">
+      </div>
+
       <button class="btn secundario" id="btn-historial-mandado">🧾 Historial de mandados</button>
       <button class="btn" id="btn-guardar-ticket">✅ Guardar Ticket</button>
   </section>
@@ -890,7 +920,8 @@ body {
     const mesesLargos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
     let myChart, myLineChart;
-    let mandadoTicket = { items: [], total: 0 };
+    // === MODIFICACIÓN 1: mandadoTicket ahora también guarda los totales por categoría ===
+    let mandadoTicket = { items: [], total: 0, categoryTotals: {} };
     let editIndex = null;
     let currentDebtId = null;
     let state = {}; // El estado ahora se gestiona desde Firebase
@@ -914,7 +945,7 @@ body {
             "Maizena", "Mantequilla", "Maruchan", "Mayonesa", "Mermelada", "Mole", "Mostaza", "Nieve",
             "Pan blanco", "Pan dulce", "Pan para hamburguesa", "Pan para hotdog", "Pan tostado", "Papa congelada",
             "Papel de aluminio", "Pimienta", "Puré de tomate", "Puré huntz", "Queso amarillo", "Queso menonita",
-            "Queso parmesano", "Queso Philadelphia", "Ranch", "Sal", "Sal con cebolla", "Salsa botanera",
+            "Queso Philadelphia", "Ranch", "Sal", "Sal con cebolla", "Salsa botanera",
             "Salsa picante", "Sazonador", "Servitoallas", "Sopa de coditos", "Spaguetti", "Tamarindo",
             "Te de manzanilla", "Tortilla amarilla", "Tortillas de harina", "Tostadas", "Yakult", "Yogurth",
             "Zukos"
@@ -1012,6 +1043,7 @@ body {
     const $btnAgregarArticulo = document.getElementById('btn-agregar-articulo');
     const $listaMandado = document.getElementById('lista-mandado');
     const $totalTicket = document.getElementById('total-ticket');
+    const $mandadoCategoriaTotales = document.getElementById('mandado-categoria-totales'); // NUEVO
     const $btnGuardarTicket = document.getElementById('btn-guardar-ticket');
     const $btnVolverMandado = document.getElementById('btn-volver-mandado');
     const $btnHistorialMandado = document.getElementById('btn-historial-mandado');
@@ -1484,7 +1516,8 @@ body {
     }
     // REPARACIÓN 1: Reinicia la variable mandadoTicket
     function limpiarFormularioMandado() {
-        mandadoTicket = { items: [], total: 0 };
+        // === MODIFICACIÓN 2: Se reinician también los totales por categoría ===
+        mandadoTicket = { items: [], total: 0, categoryTotals: {} };
         editIndex = null;
         renderMandadoList();
         $mandadoCategoria.value = '';
@@ -1579,15 +1612,24 @@ body {
 
         if (editIndex !== null) {
             // Modo edición
-            mandadoTicket.total -= mandadoTicket.items[editIndex].monto;
-            mandadoTicket.items[editIndex] = articulo;
+            // === MODIFICACIÓN 3: Lógica para actualizar los totales por categoría en modo edición ===
+            const oldItem = mandadoTicket.items[editIndex];
+            mandadoTicket.total -= oldItem.monto;
             mandadoTicket.total += articulo.monto;
+            
+            mandadoTicket.categoryTotals[oldItem.categoria] -= oldItem.monto;
+            mandadoTicket.categoryTotals[articulo.categoria] = (mandadoTicket.categoryTotals[articulo.categoria] || 0) + articulo.monto;
+
+            mandadoTicket.items[editIndex] = articulo;
+            
             editIndex = null;
             $btnAgregarArticulo.textContent = "➕ Agregar";
         } else {
             // Modo agregar nuevo
             mandadoTicket.items.push(articulo);
             mandadoTicket.total += articulo.monto;
+            // === MODIFICACIÓN 4: Lógica para actualizar los totales por categoría en modo agregar ===
+            mandadoTicket.categoryTotals[articulo.categoria] = (mandadoTicket.categoryTotals[articulo.categoria] || 0) + articulo.monto;
         }
 
         renderMandadoList();
@@ -1608,6 +1650,11 @@ body {
         if (index >= 0 && index < mandadoTicket.items.length) {
             const item = mandadoTicket.items[index];
             mandadoTicket.total -= item.monto;
+            // === MODIFICACIÓN 5: Restar el monto del total de la categoría al eliminar ===
+            mandadoTicket.categoryTotals[item.categoria] -= item.monto;
+            if (mandadoTicket.categoryTotals[item.categoria] <= 0) {
+                delete mandadoTicket.categoryTotals[item.categoria];
+            }
             mandadoTicket.items.splice(index, 1);
             renderMandadoList();
         }
@@ -1660,6 +1707,24 @@ body {
             $listaMandado.appendChild(li);
         });
         $totalTicket.textContent = fmt.format(mandadoTicket.total);
+        // === MODIFICACIÓN 6: Llamada a la nueva función para renderizar los totales por categoría ===
+        renderCategoryTotals();
+    }
+
+    // === NUEVA FUNCIÓN para renderizar los totales por categoría ===
+    function renderCategoryTotals() {
+        $mandadoCategoriaTotales.innerHTML = '';
+        const categoriasOrdenadas = Object.keys(mandadoTicket.categoryTotals).sort();
+        categoriasOrdenadas.forEach(categoria => {
+            const total = mandadoTicket.categoryTotals[categoria];
+            if (total > 0) {
+                const div = document.createElement('div');
+                div.className = 'categoria-total';
+                const colorClass = obtenerColorCategoria(categoria);
+                div.innerHTML = `<span class="nombre ${colorClass}">${categoria}:</span> <span class="monto">${fmt.format(total)}</span>`;
+                $mandadoCategoriaTotales.appendChild(div);
+            }
+        });
     }
 
     async function guardarTicket() {
