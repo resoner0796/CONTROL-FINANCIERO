@@ -446,6 +446,24 @@ body {
         font-size: 16px;
         font-weight: 600;
     }
+    
+    /* NUEVOS ESTILOS: Inputs de proyeccion */
+    .deuda-proyeccion input[type="number"], .deuda-proyeccion select {
+        width: auto;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--text-color);
+        font-size: 14px;
+    }
+    
+    .deuda-proyeccion .input-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 
     .progress-bar-container {
         width: 100%;
@@ -931,8 +949,14 @@ body {
             <span id="progress-text" class="progress-text">0%</span>
         </div>
         <div class="deuda-proyeccion">
-            <span class="label-proyeccion">Promedio de pago: <span class="valor-proyeccion" id="promedio-pago">--</span></span>
-            <span class="label-proyeccion">Días entre pagos: <span class="valor-proyeccion" id="promedio-dias">--</span></span>
+            <div class="input-group">
+                <label for="promedio-pago-input" class="label-proyeccion">Promedio de pago: </label>
+                <input type="number" id="promedio-pago-input" placeholder="$" step="0.01" />
+            </div>
+            <div class="input-group">
+                <label for="promedio-dias-input" class="label-proyeccion">Días entre pagos: </label>
+                <input type="number" id="promedio-dias-input" placeholder="#" step="1" />
+            </div>
             <span class="label-proyeccion">Fecha de liquidación estimada: <span class="valor-proyeccion" id="fecha-liquidación">--</span></span>
         </div>
         <div class="input-area" style="grid-template-columns: 1fr auto;">
@@ -1139,8 +1163,8 @@ body {
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
     const $pagosLista = document.getElementById('pagos-lista');
     // Nuevos elementos para la proyección
-    const $promedioPago = document.getElementById('promedio-pago');
-    const $promedioDias = document.getElementById('promedio-dias');
+    const $promedioPagoInput = document.getElementById('promedio-pago-input');
+    const $promedioDiasInput = document.getElementById('promedio-dias-input');
     const $fechaLiquidacion = document.getElementById('fecha-liquidación');
     const $progressBar = document.querySelector('#progress-bar .progress-bar');
     const $progressText = document.getElementById('progress-text');
@@ -1203,7 +1227,10 @@ body {
         // Asegúrate de que los pagos de deudas también tengan timestamps numéricos
         state.deudas = state.deudas.map(d => ({
             ...d,
-            pagos: (d.pagos || []).map(p => ({ ...p, ts: p.ts instanceof Timestamp ? p.ts.toDate().getTime() : p.ts }))
+            pagos: (d.pagos || []).map(p => ({ ...p, ts: p.ts instanceof Timestamp ? p.ts.toDate().getTime() : p.ts })),
+            // === NUEVA LÓGICA: Inicializar los nuevos campos si no existen ===
+            promedioPago: d.promedioPago || 0,
+            promedioDias: d.promedioDias || 0
         }));
       }
       
@@ -1912,7 +1939,10 @@ body {
             montoOriginal: montoInicial,
             montoPendiente: montoInicial,
             fechaCreacion: new Date().toISOString(),
-            pagos: []
+            pagos: [],
+            // === NUEVOS CAMPOS ===
+            promedioPago: 0,
+            promedioDias: 0
         };
         
         state.deudas.push(nuevaDeuda);
@@ -1963,60 +1993,47 @@ body {
         $deudaInfoNombre.textContent = deuda.nombre;
         $deudaInfoPendiente.textContent = `Pendiente: ${fmt.format(deuda.montoPendiente)} de ${fmt.format(deuda.montoOriginal)}`;
         
-        // Calcular y mostrar la proyección
-        const { avgPago, avgDias, fechaEstimada, porcentajePagado } = calcularProyeccionDeuda(deuda);
-        $promedioPago.textContent = fmt.format(avgPago);
-        $promedioDias.textContent = isNaN(avgDias) ? '--' : `${avgDias.toFixed(1)} días`;
-        $fechaLiquidacion.textContent = fechaEstimada;
+        // Cargar los valores de proyección guardados
+        $promedioPagoInput.value = deuda.promedioPago > 0 ? deuda.promedioPago : '';
+        $promedioDiasInput.value = deuda.promedioDias > 0 ? deuda.promedioDias : '';
+        
+        // Recalcular la proyección
+        recalcularProyeccion();
         
         // Actualizar la barra de progreso
+        const porcentajePagado = ((deuda.montoOriginal - deuda.montoPendiente) / deuda.montoOriginal) * 100;
         $progressBar.style.width = `${porcentajePagado}%`;
         $progressText.textContent = `${porcentajePagado.toFixed(1)}%`;
         
         renderPagosDeuda(deuda);
     }
     
-    // --- Nuevas funciones de proyección de deudas ---
-    function calcularProyeccionDeuda(deuda) {
-        const pagos = deuda.pagos.sort((a,b) => a.ts - b.ts);
+    // --- NUEVA LÓGICA: Recalcula la proyección basada en los inputs del usuario ---
+    function recalcularProyeccion() {
+        const deuda = (state.deudas || []).find(d => d.id == currentDebtId);
+        if (!deuda) return;
         
-        if (pagos.length === 0) {
-            return {
-                avgPago: 0,
-                avgDias: NaN,
-                fechaEstimada: 'Sin pagos registrados',
-                porcentajePagado: 0
-            };
-        }
+        const avgPago = parseFloat($promedioPagoInput.value) || 0;
+        const avgDias = parseInt($promedioDiasInput.value) || 0;
         
-        // 1. Calcular promedio de pago
-        const totalPagado = pagos.reduce((sum, pago) => sum + pago.monto, 0);
-        const avgPago = totalPagado / pagos.length;
+        // Persistir los valores nuevos en el estado
+        deuda.promedioPago = avgPago;
+        deuda.promedioDias = avgDias;
+        persist();
         
-        // 2. Calcular promedio de días entre pagos
-        let totalDias = 0;
-        for (let i = 1; i < pagos.length; i++) {
-            totalDias += (pagos[i].ts - pagos[i-1].ts) / (1000 * 60 * 60 * 24);
-        }
-        const avgDias = pagos.length > 1 ? totalDias / (pagos.length - 1) : NaN;
-        
-        // 3. Proyectar fecha de liquidación
-        let fechaEstimada = 'No hay suficiente historial';
-        if (!isNaN(avgPago) && !isNaN(avgDias) && deuda.montoPendiente > 0) {
+        let fechaEstimada = 'Ingresa datos';
+        if (avgPago > 0 && avgDias > 0 && deuda.montoPendiente > 0) {
             const pagosRestantes = Math.ceil(deuda.montoPendiente / avgPago);
             const diasRestantes = pagosRestantes * avgDias;
-            const fechaUltimoPago = new Date(pagos[pagos.length-1].ts);
-            const fechaFinal = new Date(fechaUltimoPago.getTime() + diasRestantes * (1000 * 60 * 60 * 24));
+            const fechaActual = new Date();
+            const fechaFinal = new Date(fechaActual.getTime() + diasRestantes * (1000 * 60 * 60 * 24));
             fechaEstimada = fechaFinal.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-        } else if (!isNaN(avgPago) && deuda.montoPendiente > 0) {
-             const pagosRestantes = Math.ceil(deuda.montoPendiente / avgPago);
-             fechaEstimada = `Aprox. ${pagosRestantes} pagos`;
+        } else if (avgPago > 0 && deuda.montoPendiente > 0) {
+            const pagosRestantes = Math.ceil(deuda.montoPendiente / avgPago);
+            fechaEstimada = `Aprox. ${pagosRestantes} pagos`;
         }
 
-        // 4. Calcular porcentaje pagado
-        const porcentajePagado = ((deuda.montoOriginal - deuda.montoPendiente) / deuda.montoOriginal) * 100;
-
-        return { avgPago, avgDias, fechaEstimada, porcentajePagado };
+        $fechaLiquidacion.textContent = fechaEstimada;
     }
     // --- Fin de las nuevas funciones ---
 
@@ -2130,6 +2147,9 @@ body {
     $btnAgregarDeuda.addEventListener('click', agregarDeuda);
     $btnVolverDeudaDetalle.addEventListener('click', () => mostrarPantalla('deudas-screen')); // Corregido: regresa a la pantalla de deudas
     $btnRegistrarPago.addEventListener('click', registrarPago);
+    // Nuevos event listeners para los inputs de proyección
+    $promedioPagoInput.addEventListener('input', recalcularProyeccion);
+    $promedioDiasInput.addEventListener('input', recalcularProyeccion);
     
     // Delegación de eventos para los botones de editar y eliminar
     $listaMandado.addEventListener('click', (event) => {
