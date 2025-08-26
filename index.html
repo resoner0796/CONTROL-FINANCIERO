@@ -1532,7 +1532,7 @@ body {
             const li = document.createElement('li');
             li.innerHTML = `<span class="nombre">Ticket del ${ticket.fecha}</span><span class="precio">${fmt.format(ticket.total)}</span>`;
             li.dataset.id = ticket.id;
-            li.addEventListener('click', () => mostrarDetalleMandado(ticket.id));
+            // No agregamos el event listener aquí, lo hacemos con delegación
             $mandadoHistorialLista.appendChild(li);
         });
     }
@@ -1748,6 +1748,18 @@ body {
             eliminarArticuloDelTicket(index);
         }
     });
+
+    // Delegación de eventos para la lista de historial de mandados
+    $mandadoHistorialLista.addEventListener('click', (event) => {
+        const li = event.target.closest('li');
+        if (!li) return;
+
+        const id = li.dataset.id;
+        if (id) {
+            mostrarDetalleMandado(id);
+        }
+    });
+
 
     initFirestore(); // ¡Inicia la app con la conexión a Firebase!
 
