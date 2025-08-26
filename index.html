@@ -1287,26 +1287,29 @@ body {
         }
     }
 
-    // Lógica para los cortes semanales de jueves a jueves
+    // =========================================================================
+    // ✅ CAMBIO: Lógica para los cortes semanales de jueves a jueves
+    // =========================================================================
     function inicioSemanaJueves(fecha) {
         const d = new Date(fecha);
-        d.setHours(2,0,0,0); // Jueves 02:00 am
-        const day = d.getDay(); // 0 = domingo, 4 = jueves
-        const diff = day <= 4 ? 4 - day : 7 + 4 - day;
+        const day = d.getDay(); // 0 = domingo, 1 = lunes... 4 = jueves
+        const diff = (day < 4) ? (day + 3) : (day - 4);
         d.setDate(d.getDate() - diff);
+        d.setHours(0,0,0,0);
         return d;
     }
     
     function finSemanaDesdeInicio(inicio) {
         const end = new Date(inicio);
         end.setDate(end.getDate() + 6);
-        end.setHours(1,0,0,0); // Jueves 01:00 am de la siguiente semana
+        end.setHours(23, 59, 59, 999);
         return end;
     }
 
     function rangoSemanaTexto(inicio) {
         const fin = finSemanaDesdeInicio(inicio);
-        return `Semana: Jue ${inicio.getDate()} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()} — Mié ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
+        const opciones = { day: '2-digit', month: 'short' };
+        return `Semana: ${inicio.toLocaleDateString('es-MX', opciones)} — ${fin.toLocaleDateString('es-MX', opciones)}`;
     }
 
     function fechaDisplay(tipo, dateObj = new Date()) {
@@ -1542,6 +1545,9 @@ body {
         return total;
     }
 
+    // =========================================================================
+    // ✅ CAMBIO: Lógica de corte semanal reconfigurada
+    // =========================================================================
     function aplicarCortesPendientes() {
         const hoy = new Date();
         const ultimoJuevesHoy = inicioSemanaJueves(hoy);
@@ -1600,7 +1606,9 @@ body {
           state.efectivo += monto;
           state.saldo -= monto;
       } else {
-          // Este es un gasto general. No se aplica a gastos de efectivo.
+          // =========================================================================
+          // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
+          // =========================================================================
           if (!isEfectivo) {
               state.gastos += monto;
               state.saldo -= monto;
@@ -1700,13 +1708,15 @@ body {
                 state.ahorro -= monto;
                 state.saldo += monto;
             }
-        } else if (tipo.startsWith("Efectivo")) { // Si es un gasto de efectivo...
-            state.efectivo -= monto;
+        } else if (tipo.startsWith("Efectivo: ")) { // Si es un gasto de efectivo...
+            state.efectivo -= monto; // notar que monto es negativo, por lo que suma
         } else if (tipo === "Efectivo" && monto > 0) { // Si es una recarga a efectivo
             state.efectivo -= monto;
             state.saldo += monto;
         } else {
-            // Revertir un gasto general
+            // =========================================================================
+            // ✅ CAMBIO: Revertir un gasto general
+            // =========================================================================
             state.gastos -= monto;
             state.saldo += monto;
         }
@@ -1746,8 +1756,11 @@ body {
 
     function agruparPorSemana() {
       if (!state.registros) return [];
+      // =========================================================================
+      // ✅ CAMBIO: Excluir los gastos de efectivo del historial general
+      // =========================================================================
       const grupos = new Map();
-      const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
+      const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
       const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       
       for (const r of registrosConFechas) {
@@ -1761,7 +1774,10 @@ body {
     
     function agruparPorMes() {
         if (!state.registros) return [];
-        const registrosFiltrados = state.registros.filter(r => !esGastoEfectivo(r.tipo));
+        // =========================================================================
+        // ✅ CAMBIO: Excluir los gastos de efectivo del historial general
+        // =========================================================================
+        const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
         const grupos = new Map();
         const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         
@@ -1979,6 +1995,9 @@ body {
     }
 
     // Funcionalidad de Mandado
+    // =========================================================================
+    // ✅ CAMBIO: Renderizar historial de efectivo al cambiar de pantalla
+    // =========================================================================
     function mostrarPantalla(id) {
         document.querySelectorAll('.screen').forEach(s => {
             s.classList.remove('active');
@@ -1992,11 +2011,8 @@ body {
             $mainPanel.classList.add('hidden');
         }
 
-        // =========================================================================
-        // ✅ AQUÍ ESTÁ LA CORRECCIÓN
         // Se asegura de que el historial de efectivo se renderice CADA VEZ que
         // se entra a esa pantalla, solucionando el problema.
-        // =========================================================================
         if (id === 'efectivo-screen') {
             renderHistorialEfectivo();
         }
