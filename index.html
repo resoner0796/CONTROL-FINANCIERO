@@ -56,6 +56,12 @@ body {
     padding: 16px; /* este es tu espacio normal dentro del safe-area */
     box-sizing: border-box;
   }
+  
+  /* Corrección para evitar el zoom en inputs en iOS */
+  input[type="number"]:focus,
+  input[type="text"]:focus {
+    font-size: 16px; /* Asegura un tamaño mínimo que evita el zoom */
+  }
 
     /* ====== VARIABLES DE TEMA ====== */
     :root {
@@ -253,6 +259,18 @@ body {
       border-color: var(--secondary-btn-border);
     }
     .btn.secundario:hover { background: var(--secondary-btn-bg); }
+
+    /* Ajuste de tamaño para los botones de la lista de mandado y pagos */
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      font-size: 16px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     .actions {
       width: 100%;
@@ -1635,8 +1653,8 @@ body {
                 <span class="cantidad">${cantidadDisplay}</span>
                 <span class="precio">${fmt.format(item.monto)}</span>
                 <div class="actions">
-                    <button class="btn secundario edit-item" data-index="${index}">✏️</button>
-                    <button class="btn secundario delete-item" data-index="${index}">🗑️</button>
+                    <button class="btn-icon secundario edit-item" data-index="${index}">✏️</button>
+                    <button class="btn-icon secundario delete-item" data-index="${index}">🗑️</button>
                 </div>
             `;
             $listaMandado.appendChild(li);
@@ -1675,7 +1693,7 @@ body {
         (state.mandadoTickets || []).sort((a, b) => b.id - a.id).forEach(ticket => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="nombre">Ticket del ${ticket.fecha}</span><span class="precio">${fmt.format(ticket.total)}</span>
-              <div class="actions"><button class="btn secundario delete-ticket-btn" data-id="${ticket.id}">🗑️</button></div>`;
+              <div class="actions"><button class="btn-icon secundario delete-ticket-btn" data-id="${ticket.id}">🗑️</button></div>`;
             li.dataset.id = ticket.id;
             $mandadoHistorialLista.appendChild(li);
         });
@@ -1776,7 +1794,7 @@ body {
         (state.deudas || []).sort((a, b) => new Date(a.fechaCreacion) - new Date(b.fechaCreacion)).forEach(deuda => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="nombre">${deuda.nombre}</span><span class="monto">${fmt.format(deuda.montoPendiente)}</span><span class="fecha">(${deuda.pagos.length} pagos)</span>
-            <div class="acciones"><button class="btn secundario" data-id="${deuda.id}">👁️</button><button class="btn secundario delete-deuda-btn" data-id="${deuda.id}">🗑️</button></div>`;
+            <div class="acciones"><button class="btn secundario" data-id="${deuda.id}">👁️</button><button class="btn-icon secundario delete-deuda-btn" data-id="${deuda.id}">🗑️</button></div>`;
             li.querySelector('.btn').addEventListener('click', (e) => mostrarDetalleDeuda(e.currentTarget.dataset.id));
             li.querySelector('.delete-deuda-btn').addEventListener('click', (e) => eliminarDeuda(e.currentTarget.dataset.id));
             $deudasLista.appendChild(li);
@@ -1818,7 +1836,7 @@ body {
         deuda.pagos.sort((a, b) => b.ts - a.ts).forEach(pago => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="nombre">Pago</span><span class="monto">${fmt.format(pago.monto)}</span><span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>
-            <div class="actions"><button class="btn secundario delete-pago-btn" data-pago-id="${pago.id}">🗑️</button></div>`;
+            <div class="actions"><button class="btn-icon secundario delete-pago-btn" data-pago-id="${pago.id}">🗑️</button></div>`;
             $pagosLista.appendChild(li);
         });
     }
