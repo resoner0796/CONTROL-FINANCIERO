@@ -971,6 +971,7 @@ body {
         <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar de Ahorro)" />
         <select id="tipo">
           <option value="Sueldo">Sueldo</option>
+          <option value="Depósito">Depósito</option>
           <option value="Ahorro">Ahorro</option>
           <option value="Mandado">Mandado</option>
           <option value="Efectivo">Efectivo</option>
@@ -1316,7 +1317,7 @@ body {
       const dd = String(dateObj.getDate()).padStart(2,"0");
       const mm = String(dateObj.getMonth()+1).padStart(2,"0");
       const yyyy = dateObj.getFullYear();
-      if (tipo === "Sueldo") return `${dd}/${mm}/${yyyy}`;
+      if (tipo === "Sueldo" || tipo === "Depósito") return `${dd}/${mm}/${yyyy}`;
       const hh = String(dateObj.getHours()).padStart(2,"0");
       const min = String(dateObj.getMinutes()).padStart(2,"0");
       return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
@@ -1431,7 +1432,7 @@ body {
     }
     
     function actualizarCategorias() {
-        const tiposExistentes = ["Sueldo", "Ahorro", "Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
+        const tiposExistentes = ["Sueldo", "Depósito", "Ahorro", "Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
         const nuevasCategorias = state.customCategories ? state.customCategories.filter(cat => !tiposExistentes.includes(cat)) : [];
         
         const fragment = document.createDocumentFragment();
@@ -1491,13 +1492,17 @@ body {
         if (state.registros) {
             state.registros.forEach(r => {
                 const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
+                // Tipos de transacción que son considerados gastos
                 const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
-                
-                // Asegurarse de que no sea un gasto de efectivo y que el monto sea positivo
-                const esGastoValido = esGasto && r.monto > 0;
+                // Retiros de efectivo que se consideran gastos
+                const esRetiroEfectivo = r.tipo === "Efectivo" && r.monto < 0;
+
+                const esGastoValido = (esGasto || esRetiroEfectivo);
                 
                 if (esGastoValido && fechaRegistro >= inicioSemanaActual) {
-                    gastosSemanales += r.monto;
+                    // Si es un retiro de efectivo, sumamos el valor absoluto
+                    const montoGasto = esRetiroEfectivo ? Math.abs(r.monto) : r.monto;
+                    gastosSemanales += montoGasto;
                 }
             });
         }
@@ -1614,7 +1619,7 @@ body {
           ts: now.getTime()
       };
 
-      if (tipo === "Sueldo") {
+      if (tipo === "Sueldo" || tipo === "Depósito") {
         state.saldo += monto;
       } else if (tipo === "Ahorro") {
         if (monto < 0) {
@@ -1626,6 +1631,10 @@ body {
         }
       } else if (tipo === "Efectivo") {
           // Esto es para la transferencia de saldo a efectivo.
+          if (monto > state.saldo) {
+            mostrarNotificacion("❗ Saldo insuficiente para retirar", 'error');
+            return;
+          }
           state.efectivo += monto;
           state.saldo -= monto;
       } else {
@@ -1720,7 +1729,7 @@ body {
         const { tipo, monto } = registro;
 
         // Invertir el efecto del registro en los totales
-        if (tipo === "Sueldo") {
+        if (tipo === "Sueldo" || tipo === "Depósito") {
             state.saldo -= monto;
         } else if (tipo === "Ahorro") {
             if (monto < 0) {
@@ -1759,6 +1768,7 @@ body {
         const gastos = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
         const pagosMensualesNombres = (state.pagosMensuales || []).map(p => p.nombre);
         if (tipo === "Sueldo") return "🟢";
+        if (tipo === "Depósito") return "💰";
         if (tipo === "Ahorro") return "🟡";
         if (tipo === "Efectivo") return "💵";
         if (tipo.startsWith("Efectivo: ")) return "💸";
@@ -1933,7 +1943,7 @@ body {
     }
     
     function renderLineChart() {
-        const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE" && !r.tipo.startsWith("Efectivo: "));
+        const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Depósito" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE" && !r.tipo.startsWith("Efectivo: "));
         const gastosPorFecha = gastos.reduce((acc, curr) => {
             const date = new Date(curr.ts instanceof Timestamp ? curr.ts.toDate() : curr.ts).toISOString().slice(0, 10);
             if (!acc[date]) acc[date] = 0;
@@ -2629,7 +2639,7 @@ body {
     $cancelCategoryBtn.addEventListener('click', () => $addCategoryModal.style.display = 'none');
     $saveCategoryBtn.addEventListener('click', async () => {
         const newCat = $newCategoryName.value.trim();
-        if (newCat && !(state.customCategories || []).includes(newCat) && !["Sueldo", "Ahorro", "Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"].includes(newCat)) {
+        if (newCat && !(state.customCategories || []).includes(newCat) && !["Sueldo", "Depósito", "Ahorro", "Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"].includes(newCat)) {
             if (!state.customCategories) state.customCategories = [];
             state.customCategories.push(newCat);
             await persist();
