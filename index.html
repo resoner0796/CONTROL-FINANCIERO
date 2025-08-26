@@ -496,7 +496,7 @@ body {
     }
     /* === FIN NUEVOS ESTILOS === */
     
-    /* === ESTILOS CORREGIDOS PARA PAGOS MENSUALES === */
+    /* === NUEVOS ESTILOS PARA PAGOS MENSUALES === */
     #pagos-mensuales-screen .input-item {
       width: 100%;
       max-width: 560px;
@@ -505,12 +505,11 @@ body {
       gap: 8px;
     }
     #pagos-mensuales-lista li {
-        /* Usamos flexbox para alinear el contenido */
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         padding: 10px 14px;
-        gap: 8px; /* Aumentamos el espacio entre elementos */
+        gap: 6px;
     }
     #pagos-mensuales-lista li .info-line {
         display: flex;
@@ -538,25 +537,6 @@ body {
         display: flex;
         gap: 8px;
         margin-left: auto;
-    }
-    /* El contenedor de la barra de progreso ahora tiene una posición relativa
-       para que el texto dentro de él se pueda centrar de forma absoluta. */
-    #pagos-mensuales-lista li .progress-container {
-        position: relative;
-        width: 100%;
-    }
-    
-    /* El texto de la barra de progreso ahora está en una posición absoluta
-       para centrarlo sobre la barra. */
-    #pagos-mensuales-lista li .progress-text {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-color);
-        text-shadow: 0 0 4px rgba(0,0,0,0.6);
     }
 
     #pago-mensual-detalle-screen .pago-info {
@@ -740,10 +720,38 @@ body {
     }
     
     /* Estilos para el historial de pagos de deudas */
-    #pagos-lista li {
-      cursor: default;
+    #pagos-lista li.pago-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-soft);
+        font-size: 15px;
+        cursor: default;
     }
     
+    #pagos-lista li.pago-item:last-child {
+        border-bottom: none;
+    }
+    
+    #pagos-lista li.pago-item .pago-info-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    #pagos-lista li.pago-item .fecha {
+      font-size: 12px;
+      color: var(--text-light);
+    }
+    
+    #pagos-lista li.pago-item .monto {
+      font-weight: 600;
+      color: var(--text-color);
+      margin-right: auto;
+    }
+
     /* CORRECCIÓN: Ajuste para que los botones de eliminar del historial de pagos no desborden */
     #pagos-lista li .actions {
       display: flex;
@@ -2203,8 +2211,14 @@ body {
         $pagosLista.innerHTML = '';
         deuda.pagos.sort((a, b) => b.ts - a.ts).forEach(pago => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">Pago</span><span class="monto">${fmt.format(pago.monto)}</span><span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>
-            <div class="actions"><button class="btn-icon secundario delete-pago-btn" data-pago-id="${pago.id}">🗑️</button></div>`;
+            li.classList.add('pago-item');
+            li.innerHTML = `
+                <span class="monto">${fmt.format(pago.monto)}</span>
+                <div class="pago-info-container">
+                    <span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>
+                    <button class="btn-icon secundario delete-pago-btn" data-pago-id="${pago.id}">🗑️</button>
+                </div>
+            `;
             $pagosLista.appendChild(li);
         });
     }
@@ -2347,7 +2361,7 @@ body {
                 <div class="monto-info">
                     <span>${fmt.format(pago.montoCompletado)} de <span class="monto-total">${fmt.format(pago.montoTotal)}</span></span>
                 </div>
-                <div class="progress-container">
+                <div class="progress-container" style="width: 100%;">
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${Math.min(porcentaje, 100)}%;"></div>
                     </div>
