@@ -496,7 +496,7 @@ body {
     }
     /* === FIN NUEVOS ESTILOS === */
     
-    /* === NUEVOS ESTILOS PARA PAGOS MENSUALES === */
+    /* === ESTILOS CORREGIDOS PARA PAGOS MENSUALES === */
     #pagos-mensuales-screen .input-item {
       width: 100%;
       max-width: 560px;
@@ -505,11 +505,12 @@ body {
       gap: 8px;
     }
     #pagos-mensuales-lista li {
+        /* Usamos flexbox para alinear el contenido */
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         padding: 10px 14px;
-        gap: 6px;
+        gap: 8px; /* Aumentamos el espacio entre elementos */
     }
     #pagos-mensuales-lista li .info-line {
         display: flex;
@@ -537,6 +538,25 @@ body {
         display: flex;
         gap: 8px;
         margin-left: auto;
+    }
+    /* El contenedor de la barra de progreso ahora tiene una posición relativa
+       para que el texto dentro de él se pueda centrar de forma absoluta. */
+    #pagos-mensuales-lista li .progress-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    /* El texto de la barra de progreso ahora está en una posición absoluta
+       para centrarlo sobre la barra. */
+    #pagos-mensuales-lista li .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-color);
+        text-shadow: 0 0 4px rgba(0,0,0,0.6);
     }
 
     #pago-mensual-detalle-screen .pago-info {
@@ -2327,7 +2347,7 @@ body {
                 <div class="monto-info">
                     <span>${fmt.format(pago.montoCompletado)} de <span class="monto-total">${fmt.format(pago.montoTotal)}</span></span>
                 </div>
-                <div class="progress-container" style="width: 100%;">
+                <div class="progress-container">
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${Math.min(porcentaje, 100)}%;"></div>
                     </div>
