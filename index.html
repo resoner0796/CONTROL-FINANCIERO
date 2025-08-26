@@ -1095,6 +1095,7 @@ body {
         const registro = state.registros[index];
         const { tipo, monto } = registro;
 
+        // Invertir el efecto del registro en los totales
         if (tipo === "Sueldo") {
             state.saldo -= monto;
         } else if (tipo === "Ahorro") {
@@ -1106,6 +1107,7 @@ body {
                 state.saldo += monto;
             }
         } else {
+            // Aquí es donde corregimos la lógica: si es un gasto, se suma el monto al saldo y se resta de los gastos
             state.gastos -= monto;
             state.saldo += monto;
         }
@@ -1129,6 +1131,7 @@ body {
         const div = document.createElement("div");
         div.className = "registro";
         const icono = obtenerIconoTipo(registro.tipo);
+        // Se agregó un data-id para el botón de eliminar, facilitando la identificación del registro
         div.innerHTML = `<div class="tipo"><span class="icono">${icono}</span>${registro.tipo}</div><div class="monto">${fmt.format(registro.monto)}</div><button class="delete-btn" data-id="${registro.id}">✖️</button><div class="fecha">${registro.fecha}</div>`;
         return div;
     }
@@ -1374,11 +1377,11 @@ body {
                 option.textContent = p;
                 $mandadoProducto.appendChild(option);
             });
-            $mandadoProducto.style.display = (categoria === 'Otros') ? 'none' : 'block';
+            $mandadoProducto.style.display = (categoria === 'Otros' || categoria === 'Carnes') ? 'none' : 'block';
             $nombreArticulo.style.display = (categoria === 'Otros') ? 'block' : 'none';
             // REPARACIÓN 2: Lógica para mostrar/ocultar campos de peso y cantidad
             $mandadoPeso.style.display = (categoria === 'Frutas y Verduras') ? 'block' : 'none';
-            $mandadoCantidad.style.display = (categoria === 'Abarrotes' || categoria === 'Higiene Personal') ? 'block' : 'none';
+            $mandadoCantidad.style.display = (categoria === 'Abarrotes' || categoria === 'Higiene Personal' || categoria === 'Carnes') ? 'block' : 'none';
             $mandadoPrecio.style.display = 'block';
             $btnAgregarArticulo.style.display = 'block';
         } else {
@@ -1424,7 +1427,7 @@ body {
             }
             monto = cantidad * precio;
             unidad = "kg";
-        } else if (categoria === "Abarrotes" || categoria === "Higiene Personal") {
+        } else if (categoria === "Abarrotes" || categoria === "Higiene Personal" || categoria === "Carnes") {
             cantidad = parseInt($mandadoCantidad.value);
             if (isNaN(cantidad) || cantidad <= 0) {
                 mostrarNotificacion("❗ Ingresa una cantidad válida", 'error');
