@@ -202,6 +202,7 @@ body {
     .metric.saldo  .value { color: var(--accent-green); }
     .metric.gastos .value { color: var(--accent-red); }
     .metric.deudas .value { color: #f7931a; }
+    .metric.efectivo .value { color: #50c878; }
 
     /* ====== MAIN FORM & ACTIONS ====== */
     .screen {
@@ -282,7 +283,8 @@ body {
 
     /* ====== PANTALLA DE MANDADO ====== */
     #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header,
-    #deudas-screen header, #deuda-detalle-screen header, #pagos-mensuales-screen header, #pago-mensual-detalle-screen header {
+    #deudas-screen header, #deuda-detalle-screen header, #pagos-mensuales-screen header, #pago-mensual-detalle-screen header,
+    #efectivo-screen header {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -305,7 +307,8 @@ body {
     #mandado-historial-lista,
     #mandado-detalle-lista,
     #deudas-lista,
-    #pagos-mensuales-lista {
+    #pagos-mensuales-lista,
+    #efectivo-historial-lista {
       list-style: none;
       padding: 0;
       width: 100%;
@@ -321,7 +324,8 @@ body {
     #mandado-historial-lista li,
     #mandado-detalle-lista li,
     #deudas-lista li,
-    #pagos-mensuales-lista li {
+    #pagos-mensuales-lista li,
+    #efectivo-historial-lista li {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -335,14 +339,16 @@ body {
     #mandado-historial-lista li:last-child,
     #mandado-detalle-lista li:last-child,
     #deudas-lista li:last-child,
-    #pagos-mensuales-lista li:last-child {
+    #pagos-mensuales-lista li:last-child,
+    #efectivo-historial-lista li:last-child {
       border-bottom: none;
     }
     #mandado-screen #lista-mandado li .nombre,
     #mandado-historial-lista li .nombre,
     #mandado-detalle-lista li .nombre,
     #deudas-lista li .nombre,
-    #pagos-mensuales-lista li .nombre {
+    #pagos-mensuales-lista li .nombre,
+    #efectivo-historial-lista li .nombre {
       flex: 1;
       color: var(--text-light);
     }
@@ -585,7 +591,8 @@ body {
 
     #mandado-screen .total-container,
     #mandado-historial-screen .total-container,
-    #deuda-detalle-screen .total-container {
+    #deuda-detalle-screen .total-container,
+    #efectivo-historial-screen .total-container {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -628,7 +635,7 @@ body {
     /* === FIN NUEVOS ESTILOS === */
 
     /* ====== HISTORIAL & GRAFICO ====== */
-    #historial {
+    #historial, #efectivo-historial {
       width: 100%;
       max-width: 560px;
       display: none;
@@ -637,7 +644,7 @@ body {
       border-radius: 14px;
       margin-top: 10px;
     }
-    #historial header {
+    #historial header, #efectivo-historial header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -826,7 +833,7 @@ body {
       #mandado-screen .input-item { grid-template-columns: 1fr; }
     }
     
-    #add-category-btn, #add-debt-btn, #add-monthly-payment-btn {
+    #add-category-btn, #add-debt-btn, #add-monthly-payment-btn, #btn-ir-efectivo {
       background: none;
       border: 1px solid var(--input-border);
       border-radius: 12px;
@@ -839,11 +846,11 @@ body {
       width: 100%;
       text-align: center;
     }
-    #add-monthly-payment-btn {
+    #add-monthly-payment-btn, #btn-ir-efectivo {
         margin-top: 0;
     }
 
-    #add-category-btn:hover, #add-debt-btn:hover, #add-monthly-payment-btn:hover {
+    #add-category-btn:hover, #add-debt-btn:hover, #add-monthly-payment-btn:hover, #btn-ir-efectivo:hover {
         background: var(--input-bg);
     }
 
@@ -952,6 +959,7 @@ body {
       </section>
       <button id="add-debt-btn">📝 Gestionar deudas</button>
       <button id="add-monthly-payment-btn">🗓️ Pagos mensuales</button>
+      <button id="btn-ir-efectivo">💵 Efectivo</button>
 
       <section id="historial">
         <header>
@@ -976,6 +984,34 @@ body {
       </section>
   </div>
   
+  <section id="efectivo-screen" class="screen">
+      <header>
+          <h2>Administrar Efectivo</h2>
+          <button class="btn secundario" id="btn-volver-efectivo">Volver</button>
+      </header>
+      <section class="panel">
+          <div class="metrics">
+              <div class="metric efectivo" style="width: 100%;">
+                  <div class="label">Efectivo Total</div>
+                  <div id="efectivo-total" class="value">$0.00</div>
+              </div>
+          </div>
+      </section>
+      <section class="input-area" style="grid-template-columns: 1fr 1fr auto;">
+          <input type="number" id="monto-efectivo" placeholder="Monto (ej. 200)" />
+          <select id="tipo-efectivo">
+              <option value="Mandado">Mandado</option>
+              <option value="Tienda">Tienda</option>
+              <option value="Otros">Otros</option>
+          </select>
+          <button class="btn" id="btn-confirmar-efectivo">Confirmar</button>
+      </section>
+      <section id="efectivo-historial">
+          <header>Historial de gastos en efectivo</header>
+          <div id="contenedorSemanasEfectivo" class="historial-content"></div>
+      </section>
+  </section>
+
   <section id="mandado-screen" class="screen">
       <header>
           <h2>Ticket del Mandado</h2>
@@ -1315,6 +1351,17 @@ body {
     const $btnAgregarPagoMensual = document.getElementById('btn-agregar-pago-mensual');
     const $pagosMensualesLista = document.getElementById('pagos-mensuales-lista');
 
+    // NUEVOS ELEMENTOS PARA EFECTIVO
+    const $btnIrEfectivo = document.getElementById('btn-ir-efectivo');
+    const $efectivoScreen = document.getElementById('efectivo-screen');
+    const $btnVolverEfectivo = document.getElementById('btn-volver-efectivo');
+    const $efectivoTotal = document.getElementById('efectivo-total');
+    const $montoEfectivo = document.getElementById('monto-efectivo');
+    const $tipoEfectivo = document.getElementById('tipo-efectivo');
+    const $btnConfirmarEfectivo = document.getElementById('btn-confirmar-efectivo');
+    const $efectivoHistorial = document.getElementById('efectivo-historial');
+    const $contenedorSemanasEfectivo = document.getElementById('contenedorSemanasEfectivo');
+    
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
         $notificacion.style.backgroundColor = (tipo === 'exito') ? 'var(--primary-btn-bg)' : 'var(--accent-red)';
@@ -1348,6 +1395,23 @@ body {
         });
         
         $tipo.appendChild(fragment);
+
+        // Actualizar el select de la pantalla de efectivo
+        const tiposEfectivo = ["Mandado", "Tienda", "Otros"];
+        const nuevasCategoriasEfectivo = state.customCategories ? state.customCategories.filter(cat => !tiposEfectivo.includes(cat) && !tiposExistentes.includes(cat)) : [];
+        const fragmentEfectivo = document.createDocumentFragment();
+        
+        const existingOptionsEfectivo = $tipoEfectivo.querySelectorAll('.custom-category');
+        existingOptionsEfectivo.forEach(opt => opt.remove());
+        
+        nuevasCategoriasEfectivo.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            option.classList.add('custom-category');
+            fragmentEfectivo.appendChild(option);
+        });
+        $tipoEfectivo.appendChild(fragmentEfectivo);
     }
 
     function renderResumen() {
@@ -1355,6 +1419,7 @@ body {
       $ahorro.textContent = fmt.format(state.ahorro || 0);
       $gastos.textContent = fmt.format(state.gastos || 0);
       $deudasTotal.textContent = fmt.format(calcularDeudasTotal());
+      $efectivoTotal.textContent = fmt.format(state.efectivo || 0);
     }
 
     // Funciones de sincronización con Firestore
@@ -1363,7 +1428,7 @@ body {
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
         // Inicializar la base de datos si no existe
-        state = { saldo: 0, ahorro: 0, gastos: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [], pagosMensuales: [] };
+        state = { saldo: 0, ahorro: 0, gastos: 0, efectivo: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [], pagosMensuales: [] };
         await setDoc(docRef, state);
       } else {
         state = docSnap.data();
@@ -1373,6 +1438,7 @@ body {
         if (!state.mandadoTickets) state.mandadoTickets = [];
         if (!state.customCategories) state.customCategories = [];
         if (!state.pagosMensuales) state.pagosMensuales = [];
+        if (!state.efectivo) state.efectivo = 0;
         // Reconvertir timestamps de Firestore a objetos Date
         state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         // Asegúrate de que los pagos de deudas también tengan timestamps numéricos
@@ -1389,6 +1455,7 @@ body {
       actualizarCategorias();
       renderResumen();
       renderHistorial();
+      renderHistorialEfectivo();
     }
     
     async function persist() {
@@ -1471,6 +1538,15 @@ body {
           state.ahorro += monto;
           state.saldo -= monto;
         }
+      } else if (tipo === "Efectivo") { // Nueva lógica para agregar/retirar efectivo
+        if (monto > 0) {
+            state.efectivo += monto;
+            state.saldo -= monto;
+        } else {
+            // Retirar de efectivo
+            state.efectivo += monto;
+            state.saldo -= monto; // Se resta el valor negativo
+        }
       } else {
         state.gastos += monto;
         state.saldo -= monto;
@@ -1490,6 +1566,39 @@ body {
       renderPagosMensualesList();
     }
     
+    async function agregarGastoEfectivo(tipo, monto) {
+        if (isNaN(monto) || monto <= 0) {
+            mostrarNotificacion("❗ Monto inválido", 'error');
+            return;
+        }
+
+        if (monto > state.efectivo) {
+            mostrarNotificacion("❗ Gasto mayor que el efectivo disponible", 'error');
+            return;
+        }
+
+        state.efectivo -= monto;
+        
+        const now = new Date();
+        const registro = {
+            id: now.getTime(),
+            tipo,
+            monto,
+            fecha: fechaDisplay(tipo, now),
+            ts: now.getTime()
+        };
+        state.registros.push(registro);
+        
+        // Asignar los gastos de efectivo al total de gastos para el historial principal
+        state.gastos += monto;
+
+        await persist();
+        renderResumen();
+        mostrarNotificacion("✅ Gasto de efectivo registrado");
+        renderHistorialEfectivo();
+        $montoEfectivo.value = '';
+    }
+
     async function eliminarRegistro(id) {
         if (!confirm('¿Estás seguro de que quieres eliminar este registro?')) {
             return;
@@ -1536,24 +1645,40 @@ body {
                 state.ahorro -= monto;
                 state.saldo += monto;
             }
+        } else if (tipo === "Efectivo" && monto > 0) {
+            // Si es un retiro de efectivo, se revierte sumándolo al saldo total
+            state.efectivo -= monto;
+            state.saldo += monto;
         } else {
             // Aquí es donde corregimos la lógica: si es un gasto, se suma el monto al saldo y se resta de los gastos
             state.gastos -= monto;
-            state.saldo += monto;
+            
+            // Si el gasto fue en efectivo, se suma de nuevo al saldo de efectivo
+            if (esGastoEfectivo(registro.tipo)) {
+                 state.efectivo += monto;
+            } else {
+                 state.saldo += monto;
+            }
         }
 
         state.registros.splice(index, 1);
         await persist();
         renderResumen();
         renderHistorial();
+        renderHistorialEfectivo();
         mostrarNotificacion("🗑️ Registro eliminado");
     }
 
+    function esGastoEfectivo(tipo) {
+      return ["Mandado", "Tienda", "Otros", ...(state.customCategories || [])].includes(tipo);
+    }
+
     function obtenerIconoTipo(tipo) {
-        const gastos = ["Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
+        const gastos = ["Mandado", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
         const pagosMensualesNombres = (state.pagosMensuales || []).map(p => p.nombre);
         if (tipo === "Sueldo") return "🟢";
         if (tipo === "Ahorro") return "🟡";
+        if (tipo === "Efectivo") return "💵";
         if (gastos.includes(tipo) || pagosMensualesNombres.includes(tipo)) return "🔴";
         return "";
     }
@@ -1633,6 +1758,40 @@ body {
       document.querySelectorAll('.delete-btn').forEach(btn => {
           btn.addEventListener('click', (e) => eliminarRegistro(e.currentTarget.dataset.id));
       });
+    }
+
+    function renderHistorialEfectivo() {
+        $contenedorSemanasEfectivo.innerHTML = "";
+        const gastosEfectivo = state.registros.filter(r => r.monto > 0 && esGastoEfectivo(r.tipo));
+        if (gastosEfectivo.length === 0) {
+            $efectivoHistorial.style.display = 'none';
+            return;
+        }
+        $efectivoHistorial.style.display = 'block';
+
+        const grupos = new Map();
+        for (const r of gastosEfectivo) {
+          const inicio = inicioSemanaJueves(r.ts);
+          const key = inicio.toISOString();
+          if (!grupos.has(key)) grupos.set(key, { inicio, items: [] });
+          grupos.get(key).items.push(r);
+        }
+        
+        const gruposSemanasEfectivo = Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
+        for (const g of gruposSemanasEfectivo) {
+            const divSemana = document.createElement("div");
+            divSemana.className = "semana";
+            const rango = document.createElement("div");
+            rango.className = "rango";
+            rango.textContent = rangoSemanaTexto(g.inicio);
+            divSemana.appendChild(rango);
+
+            g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
+                const registroEl = crearRegistroHTML(r);
+                divSemana.appendChild(registroEl);
+            });
+            $contenedorSemanasEfectivo.appendChild(divSemana);
+        }
     }
 
     function renderChart() {
@@ -2428,6 +2587,12 @@ body {
         eliminarPagoMensual(id);
     });
     
+    // EVENTOS DE LA NUEVA PANTALLA DE EFECTIVO
+    $btnIrEfectivo.addEventListener('click', () => mostrarPantalla('efectivo-screen'));
+    $btnVolverEfectivo.addEventListener('click', () => mostrarPantalla('main-screen'));
+    $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)));
+    $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)); });
+    
     // Delegación de eventos para los botones de editar y eliminar
     $listaMandado.addEventListener('click', (event) => {
         const btn = event.target.closest('.edit-item, .delete-item');
@@ -2465,6 +2630,14 @@ body {
 
         const pagoId = parseInt(btn.dataset.pagoId);
         eliminarPago(pagoId);
+    });
+
+    // Delegación de eventos para el historial de efectivo
+    $contenedorSemanasEfectivo.addEventListener('click', (e) => {
+        const btn = e.target.closest('.delete-btn');
+        if (btn) {
+            eliminarRegistro(parseInt(btn.dataset.id));
+        }
     });
 
     initFirestore(); // ¡Inicia la app con la conexión a Firebase!
