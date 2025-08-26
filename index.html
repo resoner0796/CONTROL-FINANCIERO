@@ -479,6 +479,26 @@ body {
       text-align: right;
     }
     
+    /* Estilos para el historial de pagos de deudas */
+    #pagos-lista li {
+      cursor: default;
+    }
+
+    #pagos-lista li .actions {
+        display: flex;
+        gap: 8px;
+        flex: none;
+        margin: 0;
+    }
+    
+    #pagos-lista li .actions .btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      font-size: 14px;
+      line-height: 1;
+    }
+
     /* ====== GRAFICO CIRCULAR ====== */
     #chart-container {
         padding: 16px 14px;
@@ -944,6 +964,7 @@ body {
     const $deudaInfoPendiente = document.getElementById('deuda-info-pendiente');
     const $deudaPagoMonto = document.getElementById('deuda-pago-monto');
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
+    const $pagosLista = document.getElementById('pagos-lista');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -999,6 +1020,11 @@ body {
         if (!state.customCategories) state.customCategories = [];
         // Reconvertir timestamps de Firestore a objetos Date
         state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
+        // Asegúrate de que los pagos de deudas también tengan timestamps numéricos
+        state.deudas = state.deudas.map(d => ({
+            ...d,
+            pagos: (d.pagos || []).map(p => ({ ...p, ts: p.ts instanceof Timestamp ? p.ts.toDate().getTime() : p.ts }))
+        }));
       }
       
       aplicarCortesPendientes();
@@ -1011,7 +1037,14 @@ body {
         state.deudasTotal = calcularDeudasTotal();
         const docRef = doc(db, "finanzas", "estado_principal");
         // Asegúrate de que los timestamps sean compatibles con Firestore
-        const stateToSave = { ...state, registros: state.registros.map(r => ({ ...r, ts: Timestamp.fromMillis(r.ts) })) };
+        const stateToSave = { 
+            ...state, 
+            registros: state.registros.map(r => ({ ...r, ts: Timestamp.fromMillis(r.ts) })),
+            deudas: state.deudas.map(d => ({
+                ...d,
+                pagos: (d.pagos || []).map(p => ({ ...p, ts: Timestamp.fromMillis(p.ts) }))
+            }))
+        };
         await setDoc(docRef, stateToSave);
     }
     
@@ -1682,7 +1715,8 @@ body {
         $pagosLista.innerHTML = '';
         deuda.pagos.sort((a, b) => b.ts - a.ts).forEach(pago => {
             const li = document.createElement('li');
-            li.innerHTML = `<span class="nombre">Pago</span><span class="monto">${fmt.format(pago.monto)}</span><span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>`;
+            li.innerHTML = `<span class="nombre">Pago</span><span class="monto">${fmt.format(pago.monto)}</span><span class="fecha">${fechaDisplay('Otros', new Date(pago.ts))}</span>
+            <div class="actions"><button class="btn secundario delete-pago-btn" data-pago-ts="${pago.ts}">🗑️</button></div>`;
             $pagosLista.appendChild(li);
         });
     }
@@ -1708,19 +1742,49 @@ body {
         const now = new Date();
         const pago = {
             monto: montoPago,
-            ts: now.getTime()
+            ts: now.getTime(),
+            id: now.getTime() // Se añade un ID único al pago
         };
         
         deuda.montoPendiente -= montoPago;
         deuda.pagos.push(pago);
         
         // Registrar el pago como un gasto en el historial principal
-        await agregarRegistro(`Pago ${deuda.nombre}`, montoPago);
+        await agregarRegistro(`Pago ${deuda.nombre}`, montoPago, `pago-${deuda.id}-${pago.id}`);
         
         await persist();
         mostrarNotificacion(`✅ Pago de ${fmt.format(montoPago)} registrado`);
         mostrarDetalleDeuda(currentDebtId);
         $deudaPagoMonto.value = '';
+    }
+
+    async function eliminarPago(pagoTs) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este pago?')) {
+            return;
+        }
+        
+        const deuda = (state.deudas || []).find(d => d.id == currentDebtId);
+        if (!deuda) {
+            mostrarNotificacion("Deuda no encontrada", 'error');
+            return;
+        }
+        
+        const pagoIndex = deuda.pagos.findIndex(p => p.ts == pagoTs);
+        if (pagoIndex === -1) {
+            mostrarNotificacion("Pago no encontrado", 'error');
+            return;
+        }
+        
+        const pago = deuda.pagos[pagoIndex];
+        deuda.montoPendiente += pago.monto;
+        deuda.pagos.splice(pagoIndex, 1);
+        
+        // Eliminar el registro del pago en el historial principal
+        await eliminarRegistro(`pago-${deuda.id}-${pago.id}`);
+
+        await persist();
+        mostrarNotificacion("🗑️ Pago eliminado");
+        mostrarDetalleDeuda(currentDebtId);
     }
 
     // Event Listeners
@@ -1789,6 +1853,14 @@ body {
         }
     });
 
+    // Delegación de eventos para la lista de pagos de deudas
+    $pagosLista.addEventListener('click', (event) => {
+        const btn = event.target.closest('.delete-pago-btn');
+        if (!btn) return;
+
+        const pagoTs = parseInt(btn.dataset.pagoTs);
+        eliminarPago(pagoTs);
+    });
 
     initFirestore(); // ¡Inicia la app con la conexión a Firebase!
 
