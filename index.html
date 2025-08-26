@@ -1492,16 +1492,16 @@ body {
         if (state.registros) {
             state.registros.forEach(r => {
                 const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
-                // Tipos de transacción que son considerados gastos
                 const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
-                // Retiros de efectivo que se consideran gastos
-                const esGastoEfectivo = r.tipo.startsWith("Efectivo: ") && r.monto < 0;
-
-                const esGastoValido = (esGasto || esGastoEfectivo);
+                const esRetiroEfectivo = r.tipo === "Efectivo";
                 
-                if (esGastoValido && fechaRegistro >= inicioSemanaActual) {
-                    // Sumamos el valor absoluto del gasto
-                    gastosSemanales += Math.abs(r.monto);
+                // Sumamos el valor de la transacción si es un gasto o un retiro de efectivo de la cuenta principal
+                if (fechaRegistro >= inicioSemanaActual) {
+                    if (esGasto) {
+                        gastosSemanales += Math.abs(r.monto);
+                    } else if (esRetiroEfectivo) {
+                         gastosSemanales += r.monto;
+                    }
                 }
             });
         }
@@ -1636,6 +1636,7 @@ body {
           }
           state.efectivo += monto;
           state.saldo -= monto;
+          // NO se agrega el retiro a state.gastos
       } else {
           // =========================================================================
           // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
@@ -1899,7 +1900,7 @@ body {
 
     function renderChart() {
         const gastos = (state.registros || []).filter(r => {
-            const tipoGastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
+            const tipoGastos = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", "Efectivo", ...(state.customCategories || [])];
             return tipoGastos.includes(r.tipo) && r.monto > 0;
         });
         
@@ -2113,7 +2114,7 @@ body {
             return;
         }
 
-        const precio = parseFloat($mandadoPrecio.value);
+        const precio = parseFloat($mandado-precio.value);
         if (isNaN(precio) || precio <= 0) {
             mostrarNotificacion("❗ Ingresa un precio válido", 'error');
             return;
@@ -2471,7 +2472,7 @@ body {
     }
     
     async function registrarPago() {
-        const montoPago = parseFloat($deudaPagoMonto.value);
+        const montoPago = parseFloat($deuda-pago-monto.value);
         if (isNaN(montoPago) || montoPago <= 0) {
             mostrarNotificacion("❗ Ingresa un monto de pago válido", 'error');
             return;
