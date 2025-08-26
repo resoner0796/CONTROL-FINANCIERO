@@ -282,7 +282,7 @@ body {
 
     /* ====== PANTALLA DE MANDADO ====== */
     #mandado-screen header, #mandado-historial-screen header, #mandado-detalle-screen header,
-    #deudas-screen header, #deuda-detalle-screen header {
+    #deudas-screen header, #deuda-detalle-screen header, #pagos-mensuales-screen header, #pago-mensual-detalle-screen header {
       width: 100%;
       max-width: 560px;
       display: flex;
@@ -305,7 +305,7 @@ body {
     #mandado-historial-lista,
     #mandado-detalle-lista,
     #deudas-lista,
-    #pagos-lista {
+    #pagos-mensuales-lista {
       list-style: none;
       padding: 0;
       width: 100%;
@@ -321,7 +321,7 @@ body {
     #mandado-historial-lista li,
     #mandado-detalle-lista li,
     #deudas-lista li,
-    #pagos-lista li {
+    #pagos-mensuales-lista li {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -335,14 +335,14 @@ body {
     #mandado-historial-lista li:last-child,
     #mandado-detalle-lista li:last-child,
     #deudas-lista li:last-child,
-    #pagos-lista li:last-child {
+    #pagos-mensuales-lista li:last-child {
       border-bottom: none;
     }
     #mandado-screen #lista-mandado li .nombre,
     #mandado-historial-lista li .nombre,
     #mandado-detalle-lista li .nombre,
     #deudas-lista li .nombre,
-    #pagos-lista li .nombre {
+    #pagos-mensuales-lista li .nombre {
       flex: 1;
       color: var(--text-light);
     }
@@ -366,7 +366,7 @@ body {
     #mandado-historial-lista li .precio,
     #mandado-detalle-lista li .precio,
     #deudas-lista li .monto,
-    #pagos-lista li .monto {
+    #pagos-mensuales-lista li .monto {
       font-weight: 600;
     }
 
@@ -495,6 +495,93 @@ body {
         position: relative;
     }
     /* === FIN NUEVOS ESTILOS === */
+    
+    /* === NUEVOS ESTILOS PARA PAGOS MENSUALES === */
+    #pagos-mensuales-screen .input-item {
+      width: 100%;
+      max-width: 560px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    #pagos-mensuales-lista li {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 14px;
+        gap: 6px;
+    }
+    #pagos-mensuales-lista li .info-line {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+    }
+    #pagos-mensuales-lista li .nombre {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+    #pagos-mensuales-lista li .monto-info {
+        font-size: 14px;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    #pagos-mensuales-lista li .monto-info .monto-total {
+        font-weight: 600;
+        color: var(--accent-green);
+    }
+    #pagos-mensuales-lista li .actions {
+        display: flex;
+        gap: 8px;
+        margin-left: auto;
+    }
+
+    #pago-mensual-detalle-screen .pago-info {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 14px;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: var(--card-bg);
+      text-align: center;
+    }
+    #pago-mensual-detalle-screen .pago-info .titulo {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    #pago-mensual-detalle-screen .pago-info .monto-total {
+        font-size: 18px;
+        color: var(--accent-green);
+    }
+    #pago-mensual-detalle-screen .pago-info .monto-pendiente {
+        font-size: 16px;
+        color: var(--accent-red);
+        font-weight: 600;
+    }
+    
+    #pago-mensual-detalle-screen .pago-mensual-proyeccion {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    #pago-mensual-detalle-screen .pago-mensual-proyeccion .label-proyeccion {
+        font-size: 13px;
+        color: var(--text-light);
+        font-weight: 500;
+        margin-top: 4px;
+    }
+    /* === FIN NUEVOS ESTILOS === */
+
 
     #mandado-screen .total-container,
     #mandado-historial-screen .total-container,
@@ -711,7 +798,7 @@ body {
       #mandado-screen .input-item { grid-template-columns: 1fr; }
     }
     
-    #add-category-btn, #add-debt-btn {
+    #add-category-btn, #add-debt-btn, #add-monthly-payment-btn {
       background: none;
       border: 1px solid var(--input-border);
       border-radius: 12px;
@@ -724,8 +811,11 @@ body {
       width: 100%;
       text-align: center;
     }
+    #add-monthly-payment-btn {
+        margin-top: 0;
+    }
 
-    #add-category-btn:hover, #add-debt-btn:hover {
+    #add-category-btn:hover, #add-debt-btn:hover, #add-monthly-payment-btn:hover {
         background: var(--input-bg);
     }
 
@@ -833,6 +923,7 @@ body {
         <button class="btn secundario" id="btn-mandado">🛒 Ir al Mandado</button>
       </section>
       <button id="add-debt-btn">📝 Gestionar deudas</button>
+      <button id="add-monthly-payment-btn">🗓️ Pagos mensuales</button>
 
       <section id="historial">
         <header>
@@ -968,6 +1059,20 @@ body {
     <ul id="pagos-lista"></ul>
   </section>
 
+  <section id="pagos-mensuales-screen" class="screen">
+    <header>
+        <h2>Pagos mensuales</h2>
+        <button class="btn secundario" id="btn-volver-pagos-mensuales">Volver</button>
+    </header>
+    <div class="input-item">
+        <input type="text" id="pago-mensual-nombre" placeholder="Nombre del pago (ej. Telmex)" />
+        <input type="number" id="pago-mensual-monto" placeholder="Monto total del mes" />
+        <button class="btn" id="btn-agregar-pago-mensual">➕ Agregar pago</button>
+    </div>
+    <ul id="pagos-mensuales-lista">
+        </ul>
+  </section>
+  
   <div id="add-category-modal" class="modal">
       <div class="modal-content">
           <h3>Añadir nueva categoría</h3>
@@ -1069,24 +1174,28 @@ body {
         }
     }
 
+    // Lógica para los cortes semanales de jueves a jueves
     function inicioSemanaJueves(fecha) {
-      const d = new Date(fecha);
-      d.setHours(0,0,0,0);
-      const day = d.getDay();
-      const diff = (day - 4 + 7) % 7;
-      d.setDate(d.getDate() - diff);
-      return d;
+        const d = new Date(fecha);
+        d.setHours(2,0,0,0); // Jueves 02:00 am
+        const day = d.getDay(); // 0 = domingo, 4 = jueves
+        const diff = day <= 4 ? 4 - day : 7 + 4 - day;
+        d.setDate(d.getDate() - diff);
+        return d;
     }
+    
     function finSemanaDesdeInicio(inicio) {
-      const end = new Date(inicio);
-      end.setDate(end.getDate() + 6);
-      end.setHours(23,59,59,999);
-      return end;
+        const end = new Date(inicio);
+        end.setDate(end.getDate() + 6);
+        end.setHours(1,0,0,0); // Jueves 01:00 am de la siguiente semana
+        return end;
     }
+
     function rangoSemanaTexto(inicio) {
-      const fin = finSemanaDesdeInicio(inicio);
-      return `Semana: Jue ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()} — Mié ${inicio.getDate()} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()}`;
+        const fin = finSemanaDesdeInicio(inicio);
+        return `Semana: Jue ${inicio.getDate()} ${mesesCortos[inicio.getMonth()]} ${inicio.getFullYear()} — Mié ${fin.getDate()} ${mesesCortos[fin.getMonth()]} ${fin.getFullYear()}`;
     }
+
     function fechaDisplay(tipo, dateObj = new Date()) {
       const dd = String(dateObj.getDate()).padStart(2,"0");
       const mm = String(dateObj.getMonth()+1).padStart(2,"0");
@@ -1169,6 +1278,14 @@ body {
     const $progressBar = document.querySelector('#progress-bar .progress-bar');
     const $progressText = document.getElementById('progress-text');
 
+    // NUEVOS ELEMENTOS PARA PAGOS MENSUALES
+    const $btnPagosMensuales = document.getElementById('add-monthly-payment-btn');
+    const $pagosMensualesScreen = document.getElementById('pagos-mensuales-screen');
+    const $btnVolverPagosMensuales = document.getElementById('btn-volver-pagos-mensuales');
+    const $pagoMensualNombre = document.getElementById('pago-mensual-nombre');
+    const $pagoMensualMonto = document.getElementById('pago-mensual-monto');
+    const $btnAgregarPagoMensual = document.getElementById('btn-agregar-pago-mensual');
+    const $pagosMensualesLista = document.getElementById('pagos-mensuales-lista');
 
     function mostrarNotificacion(mensaje, tipo = 'exito') {
         $notificacion.textContent = mensaje;
@@ -1180,7 +1297,7 @@ body {
     }
     
     function actualizarCategorias() {
-        const tiposExistentes = ["Sueldo", "Ahorro", "Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
+        const tiposExistentes = ["Sueldo", "Ahorro", "Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
         const nuevasCategorias = state.customCategories ? state.customCategories.filter(cat => !tiposExistentes.includes(cat)) : [];
         
         const fragment = document.createDocumentFragment();
@@ -1188,13 +1305,18 @@ body {
         // Remove existing custom categories to prevent duplicates
         const existingOptions = $tipo.querySelectorAll('.custom-category');
         existingOptions.forEach(opt => opt.remove());
-        
-        nuevasCategorias.forEach(cat => {
-            const option = document.createElement('option');
-            option.value = cat;
-            option.textContent = cat;
-            option.classList.add('custom-category');
-            fragment.appendChild(option);
+
+        // Asegurarse de que los pagos mensuales se agreguen a la lista de tipos
+        const pagosMensualesNombres = (state.pagosMensuales || []).map(p => p.nombre);
+
+        [...nuevasCategorias, ...pagosMensualesNombres].forEach(cat => {
+            if (!tiposExistentes.includes(cat)) {
+                const option = document.createElement('option');
+                option.value = cat;
+                option.textContent = cat;
+                option.classList.add('custom-category');
+                fragment.appendChild(option);
+            }
         });
         
         $tipo.appendChild(fragment);
@@ -1213,7 +1335,7 @@ body {
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
         // Inicializar la base de datos si no existe
-        state = { saldo: 0, ahorro: 0, gastos: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [] };
+        state = { saldo: 0, ahorro: 0, gastos: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [], pagosMensuales: [] };
         await setDoc(docRef, state);
       } else {
         state = docSnap.data();
@@ -1222,6 +1344,7 @@ body {
         if (!state.registros) state.registros = [];
         if (!state.mandadoTickets) state.mandadoTickets = [];
         if (!state.customCategories) state.customCategories = [];
+        if (!state.pagosMensuales) state.pagosMensuales = [];
         // Reconvertir timestamps de Firestore a objetos Date
         state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         // Asegúrate de que los pagos de deudas también tengan timestamps numéricos
@@ -1268,22 +1391,33 @@ body {
     }
 
     function aplicarCortesPendientes() {
-      const hoy = new Date();
-      const ultimoJuevesHoy = inicioSemanaJueves(hoy);
-      if (!state.ultimaCorte) {
+        const hoy = new Date();
+        const ultimoJuevesHoy = inicioSemanaJueves(hoy);
+        
+        if (!state.ultimaCorte) {
+            state.ultimaCorte = ultimoJuevesHoy.toISOString();
+            persist();
+            return;
+        }
+
+        let corte = new Date(state.ultimaCorte);
+        while (corte.getTime() < ultimoJuevesHoy.getTime()) {
+            const siguienteCorte = new Date(corte);
+            siguienteCorte.setDate(siguienteCorte.getDate() + 7);
+            
+            // Si la siguiente fecha de corte es posterior a hoy, no hacer el corte aún.
+            if (siguienteCorte.getTime() > hoy.getTime()) {
+                break;
+            }
+            
+            state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", siguienteCorte), ts:siguienteCorte.getTime() });
+            state.gastos = 0;
+            corte = siguienteCorte;
+        }
         state.ultimaCorte = ultimoJuevesHoy.toISOString();
         persist();
-        return;
-      }
-      let corte = new Date(state.ultimaCorte);
-      while (inicioSemanaJueves(corte).getTime() < ultimoJuevesHoy.getTime()) {
-        state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", corte), ts:corte.getTime() });
-        state.gastos = 0;
-        corte.setDate(corte.getDate()+7);
-      }
-      state.ultimaCorte = ultimoJuevesHoy.toISOString();
-      persist();
     }
+
 
     async function agregarRegistro(tipo, monto, id = null) {
       if (isNaN(monto) || monto === 0) {
@@ -1312,6 +1446,12 @@ body {
       } else {
         state.gastos += monto;
         state.saldo -= monto;
+        
+        // NUEVA LÓGICA: Si el gasto es un pago mensual, actualiza el progreso
+        const pagoMensual = state.pagosMensuales.find(p => p.nombre === tipo);
+        if (pagoMensual) {
+            pagoMensual.montoCompletado += monto;
+        }
       }
 
       state.registros.push(registro);
@@ -1319,6 +1459,7 @@ body {
       renderResumen();
       mostrarNotificacion("✅ Transacción registrada");
       renderHistorial();
+      renderPagosMensualesList();
     }
     
     async function eliminarRegistro(id) {
@@ -1381,10 +1522,11 @@ body {
     }
 
     function obtenerIconoTipo(tipo) {
-        const gastos = ["Mandado", "Efectivo", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
+        const gastos = ["Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", ...(state.customCategories || [])];
+        const pagosMensualesNombres = (state.pagosMensuales || []).map(p => p.nombre);
         if (tipo === "Sueldo") return "🟢";
         if (tipo === "Ahorro") return "🟡";
-        if (gastos.includes(tipo)) return "🔴";
+        if (gastos.includes(tipo) || pagosMensualesNombres.includes(tipo)) return "🔴";
         return "";
     }
 
@@ -2106,6 +2248,95 @@ body {
         mostrarNotificacion("🗑️ Pago eliminado");
         mostrarDetalleDeuda(currentDebtId);
     }
+    
+    // NUEVAS FUNCIONES: Pagos Mensuales
+    function mostrarPantallaPagosMensuales() {
+        mostrarPantalla('pagos-mensuales-screen');
+        renderPagosMensualesList();
+        $pagoMensualNombre.value = '';
+        $pagoMensualMonto.value = '';
+    }
+
+    async function agregarPagoMensual() {
+        const nombre = $pagoMensualNombre.value.trim();
+        const monto = parseFloat($pagoMensualMonto.value);
+        if (!nombre || isNaN(monto) || monto <= 0) {
+            mostrarNotificacion("❗ Ingresa un nombre y monto válidos", 'error');
+            return;
+        }
+        
+        const pagoExistente = state.pagosMensuales.find(p => p.nombre === nombre);
+        if (pagoExistente) {
+            mostrarNotificacion("❗ El pago ya existe, edítalo en la lista", 'error');
+            return;
+        }
+        
+        const nuevoPago = {
+            id: Date.now(),
+            nombre: nombre,
+            montoTotal: monto,
+            montoCompletado: 0,
+            fechaCreacion: new Date().toISOString(),
+        };
+        
+        state.pagosMensuales.push(nuevoPago);
+        state.customCategories.push(nombre);
+        await persist();
+        actualizarCategorias();
+        mostrarNotificacion(`✅ Pago de ${nombre} agregado`);
+        renderPagosMensualesList();
+        $pagoMensualNombre.value = '';
+        $pagoMensualMonto.value = '';
+    }
+
+    async function eliminarPagoMensual(id) {
+        if (!confirm('¿Estás seguro de que quieres eliminar este pago mensual?')) {
+            return;
+        }
+        const index = state.pagosMensuales.findIndex(p => p.id == id);
+        if (index !== -1) {
+            const nombrePago = state.pagosMensuales[index].nombre;
+            state.pagosMensuales.splice(index, 1);
+            
+            // Eliminar de las categorías de gasto personalizadas
+            const catIndex = state.customCategories.findIndex(c => c === nombrePago);
+            if(catIndex !== -1) {
+                state.customCategories.splice(catIndex, 1);
+            }
+            
+            await persist();
+            actualizarCategorias();
+            mostrarNotificacion("🗑️ Pago mensual eliminado");
+            renderPagosMensualesList();
+        }
+    }
+    
+    function renderPagosMensualesList() {
+        $pagosMensualesLista.innerHTML = '';
+        (state.pagosMensuales || []).sort((a, b) => b.id - a.id).forEach(pago => {
+            const porcentaje = (pago.montoCompletado / pago.montoTotal) * 100;
+            const montoPendiente = pago.montoTotal - pago.montoCompletado;
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <div class="info-line">
+                    <span class="nombre">${pago.nombre}</span>
+                    <div class="actions">
+                         <button class="btn-icon secundario delete-pago-mensual-btn" data-id="${pago.id}">🗑️</button>
+                    </div>
+                </div>
+                <div class="monto-info">
+                    <span>${fmt.format(pago.montoCompletado)} de <span class="monto-total">${fmt.format(pago.montoTotal)}</span></span>
+                </div>
+                <div class="progress-container" style="width: 100%;">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: ${Math.min(porcentaje, 100)}%;"></div>
+                    </div>
+                    <span class="progress-text">${porcentaje.toFixed(1)}% | Pendiente: ${fmt.format(montoPendiente)}</span>
+                </div>
+            `;
+            $pagosMensualesLista.appendChild(li);
+        });
+    }
 
     // Event Listeners
     applySavedTheme();
@@ -2150,6 +2381,18 @@ body {
     // Nuevos event listeners para los inputs de proyección
     $promedioPagoInput.addEventListener('input', recalcularProyeccion);
     $promedioDiasInput.addEventListener('input', recalcularProyeccion);
+    
+    // NUEVOS EVENT LISTENERS PARA PAGOS MENSUALES
+    $btnPagosMensuales.addEventListener('click', mostrarPantallaPagosMensuales);
+    $btnVolverPagosMensuales.addEventListener('click', () => mostrarPantalla('main-screen'));
+    $btnAgregarPagoMensual.addEventListener('click', agregarPagoMensual);
+    $pagosMensualesLista.addEventListener('click', (event) => {
+        const btn = event.target.closest('.delete-pago-mensual-btn');
+        if (!btn) return;
+
+        const id = parseInt(btn.dataset.id);
+        eliminarPagoMensual(id);
+    });
     
     // Delegación de eventos para los botones de editar y eliminar
     $listaMandado.addEventListener('click', (event) => {
