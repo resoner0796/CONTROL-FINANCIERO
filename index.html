@@ -678,24 +678,37 @@ body {
       padding: 0;
     }
     .semana, .mes {
-      padding: 10px 14px 2px;
       border-bottom: 1px dashed var(--card-border);
+    }
+    .semana:last-child, .mes:last-child {
+      border-bottom: none;
     }
     .semana .rango, .mes .rango {
       font-size: 12px;
       color: var(--text-light);
       margin-bottom: 8px;
+      padding: 10px 14px;
     }
+    /* Estilo para el elemento summary (título desplegable) */
+    .semana summary.rango {
+        margin-bottom: 0;
+        cursor: pointer;
+        outline: none;
+    }
+
     .registro {
       display: grid;
       grid-template-columns: auto 1fr auto auto;
       gap: 6px;
-      padding: 8px 0;
+      padding: 8px 14px; /* Añadido padding lateral */
       border-bottom: 1px solid var(--border-soft);
       font-size: 14px;
       align-items: center;
     }
-    .registro:last-child { border-bottom: none; }
+    .semana > div .registro:last-child, /* Para el contenedor dentro de <details> */
+    .mes .registro:last-child { 
+      border-bottom: none; 
+    }
     .registro .tipo {
       color: var(--text-color);
       font-weight: 600;
@@ -956,7 +969,7 @@ body {
         <div id="saldo" class="value">$0.00</div>
       </div>
       <div class="metric gastos">
-        <div class="label">Gastos</div>
+        <div class="label">Gastos (Semana)</div>
         <div id="gastos" class="value">$0.00</div>
       </div>
       <div class="metric deudas">
@@ -1226,11 +1239,10 @@ body {
     const mesesLargos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
     const mesesCortos = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
     let myChart, myLineChart;
-    // === MODIFICACIÓN 1: mandadoTicket ahora también guarda los totales por categoría ===
     let mandadoTicket = { items: [], total: 0, categoryTotals: {} };
     let editIndex = null;
     let currentDebtId = null;
-    let state = {}; // El estado ahora se gestiona desde Firebase
+    let state = {};
 
     const productosMandado = {
         "Frutas y Verduras": [
@@ -1272,7 +1284,6 @@ body {
         "Otros": ["Otros"]
     };
     
-    // Función para obtener el color de la categoría
     function obtenerColorCategoria(categoria) {
         switch(categoria) {
             case "Higiene Personal":
@@ -1281,19 +1292,16 @@ body {
                 return "frutas";
             case "Carnes":
                 return "carnes";
-            case "Abarrotes": // CORRECCIÓN
+            case "Abarrotes":
                 return "abarrotes";
             default:
                 return "otros";
         }
     }
 
-    // =========================================================================
-    // ✅ CAMBIO: Lógica para los cortes semanales de jueves a jueves
-    // =========================================================================
     function inicioSemanaJueves(fecha) {
         const d = new Date(fecha);
-        const day = d.getDay(); // 0 = domingo, 1 = lunes... 4 = jueves
+        const day = d.getDay();
         const diff = (day < 4) ? (day + 3) : (day - 4);
         d.setDate(d.getDate() - diff);
         d.setHours(0,0,0,0);
@@ -1351,12 +1359,12 @@ body {
     const $mandadoProducto = document.getElementById('mandado-producto');
     const $nombreArticulo = document.getElementById('nombre-articulo');
     const $mandadoPeso = document.getElementById('mandado-peso');
-    const $mandadoCantidad = document.getElementById('mandado-cantidad'); // NUEVO
+    const $mandadoCantidad = document.getElementById('mandado-cantidad');
     const $mandadoPrecio = document.getElementById('mandado-precio');
     const $btnAgregarArticulo = document.getElementById('btn-agregar-articulo');
     const $listaMandado = document.getElementById('lista-mandado');
     const $totalTicket = document.getElementById('total-ticket');
-    const $mandadoCategoriaTotales = document.getElementById('mandado-categoria-totales'); // NUEVO
+    const $mandadoCategoriaTotales = document.getElementById('mandado-categoria-totales');
     const $btnGuardarTicket = document.getElementById('btn-guardar-ticket');
     const $btnVolverMandado = document.getElementById('btn-volver-mandado');
     const $btnHistorialMandado = document.getElementById('btn-historial-mandado');
@@ -1367,7 +1375,7 @@ body {
     const $btnVolverDetalle = document.getElementById('btn-volver-detalle');
     const $detalleTitulo = document.getElementById('detalle-titulo');
     const $detalleTotal = document.getElementById('detalle-total');
-    const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista'); // Agregado
+    const $mandadoDetalleLista = document.getElementById('mandado-detalle-lista');
     const $themeSwitcher = document.getElementById('theme-switcher');
     const $addCategoryBtn = document.getElementById('add-category-btn');
     const $addCategoryModal = document.getElementById('add-category-modal');
@@ -1388,14 +1396,11 @@ body {
     const $deudaPagoMonto = document.getElementById('deuda-pago-monto');
     const $btnRegistrarPago = document.getElementById('btn-registrar-pago');
     const $pagosLista = document.getElementById('pagos-lista');
-    // Nuevos elementos para la proyección
     const $promedioPagoInput = document.getElementById('promedio-pago-input');
     const $promedioDiasInput = document.getElementById('promedio-dias-input');
     const $fechaLiquidacion = document.getElementById('fecha-liquidación');
     const $progressBar = document.querySelector('#progress-bar .progress-bar');
     const $progressText = document.getElementById('progress-text');
-
-    // NUEVOS ELEMENTOS PARA PAGOS MENSUALES
     const $btnPagosMensuales = document.getElementById('add-monthly-payment-btn');
     const $pagosMensualesScreen = document.getElementById('pagos-mensuales-screen');
     const $btnVolverPagosMensuales = document.getElementById('btn-volver-pagos-mensuales');
@@ -1403,8 +1408,6 @@ body {
     const $pagoMensualMonto = document.getElementById('pago-mensual-monto');
     const $btnAgregarPagoMensual = document.getElementById('btn-agregar-pago-mensual');
     const $pagosMensualesLista = document.getElementById('pagos-mensuales-lista');
-
-    // NUEVOS ELEMENTOS PARA EFECTIVO
     const $btnIrEfectivo = document.getElementById('btn-ir-efectivo');
     const $efectivoScreen = document.getElementById('efectivo-screen');
     const $btnVolverEfectivo = document.getElementById('btn-volver-efectivo');
@@ -1414,7 +1417,6 @@ body {
     const $btnConfirmarEfectivo = document.getElementById('btn-confirmar-efectivo');
     const $efectivoHistorial = document.getElementById('efectivo-historial');
     const $contenedorSemanasEfectivo = document.getElementById('contenedorSemanasEfectivo');
-    // Nuevos elementos para el modal de conceptos de efectivo
     const $addEfectivoConceptBtn = document.getElementById('add-efectivo-category-btn');
     const $addEfectivoConceptModal = document.getElementById('add-efectivo-concept-modal');
     const $newEfectivoConceptName = document.getElementById('new-efectivo-concept-name');
@@ -1437,11 +1439,9 @@ body {
         
         const fragment = document.createDocumentFragment();
         
-        // Remove existing custom categories to prevent duplicates
         const existingOptions = $tipo.querySelectorAll('.custom-category');
         existingOptions.forEach(opt => opt.remove());
 
-        // Asegurarse de que los pagos mensuales se agreguen a la lista de tipos
         const pagosMensualesNombres = (state.pagosMensuales || []).map(p => p.nombre);
 
         [...nuevasCategorias, ...pagosMensualesNombres].forEach(cat => {
@@ -1456,7 +1456,6 @@ body {
         
         $tipo.appendChild(fragment);
 
-        // Actualizar el select de la pantalla de efectivo
         const tiposEfectivo = ["Mandado", "Tienda", "Otros"];
         const nuevasCategoriasEfectivo = state.customEfectivoCategories ? state.customEfectivoCategories.filter(cat => !tiposEfectivo.includes(cat)) : [];
         const fragmentEfectivo = document.createDocumentFragment();
@@ -1474,51 +1473,50 @@ body {
         $tipoEfectivo.appendChild(fragmentEfectivo);
     }
 
+    // ✅ CAMBIO: La barra de gastos ahora usa una función que calcula solo los de la semana actual.
     function renderResumen() {
       $saldo.textContent  = fmt.format(state.saldo || 0);
       $ahorro.textContent = fmt.format(state.ahorro || 0);
-      // ✅ CORRECCIÓN: Aquí se llama a la nueva función para calcular los gastos semanales
       $gastos.textContent = fmt.format(calcularGastosSemanales());
       $deudasTotal.textContent = fmt.format(calcularDeudasTotal());
       $efectivoTotal.textContent = fmt.format(state.efectivo || 0);
     }
     
-    // ✅ NUEVA FUNCIÓN: Para calcular los gastos de la semana en curso
+    // ✅ NUEVA FUNCIÓN: Calcula los gastos de la semana en curso (Jueves a Miércoles).
     function calcularGastosSemanales() {
+        if (!state.registros) return 0;
+        
         const hoy = new Date();
         const inicioSemanaActual = inicioSemanaJueves(hoy);
         let gastosSemanales = 0;
         
-        if (state.registros) {
-            state.registros.forEach(r => {
-                const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
-                const esGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || [])].includes(r.tipo);
-                const esRetiroEfectivo = r.tipo === "Efectivo";
-                
-                // Sumamos el valor de la transacción si es un gasto o un retiro de efectivo de la cuenta principal
-                if (fechaRegistro >= inicioSemanaActual) {
-                    if (esGasto) {
-                        gastosSemanales += Math.abs(r.monto);
-                    } else if (esRetiroEfectivo) {
-                         gastosSemanales += r.monto;
-                    }
-                }
-            });
-        }
+        const tiposDeGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || []), ...(state.pagosMensuales || []).map(p => p.nombre)];
+
+        state.registros.forEach(r => {
+            const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
+
+            // Se considera gasto si:
+            // 1. Es un tipo de gasto conocido.
+            // 2. Es un retiro a la cuenta de "Efectivo".
+            const esGasto = tiposDeGasto.includes(r.tipo);
+            const esRetiroEfectivo = r.tipo === "Efectivo";
+
+            if (fechaRegistro >= inicioSemanaActual && (esGasto || esRetiroEfectivo)) {
+                gastosSemanales += Math.abs(r.monto);
+            }
+        });
+        
         return gastosSemanales;
     }
 
-    // Funciones de sincronización con Firestore
     async function initFirestore() {
       const docRef = doc(db, "finanzas", "estado_principal");
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
-        // Inicializar la base de datos si no existe
         state = { saldo: 0, ahorro: 0, gastos: 0, efectivo: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [], customEfectivoCategories: [], pagosMensuales: [] };
         await setDoc(docRef, state);
       } else {
         state = docSnap.data();
-        // Asegúrate de que los arrays existan si son nuevos campos
         if (!state.deudas) state.deudas = [];
         if (!state.registros) state.registros = [];
         if (!state.mandadoTickets) state.mandadoTickets = [];
@@ -1526,13 +1524,10 @@ body {
         if (!state.customEfectivoCategories) state.customEfectivoCategories = [];
         if (!state.pagosMensuales) state.pagosMensuales = [];
         if (!state.efectivo) state.efectivo = 0;
-        // Reconvertir timestamps de Firestore a objetos Date
         state.registros = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
-        // Asegúrate de que los pagos de deudas también tengan timestamps numéricos
         state.deudas = state.deudas.map(d => ({
             ...d,
             pagos: (d.pagos || []).map(p => ({ ...p, ts: p.ts instanceof Timestamp ? p.ts.toDate().getTime() : p.ts })),
-            // === NUEVA LÓGICA: Inicializar los nuevos campos si no existen ===
             promedioPago: d.promedioPago || 0,
             promedioDias: d.promedioDias || 0
         }));
@@ -1548,7 +1543,6 @@ body {
     async function persist() {
         state.deudasTotal = calcularDeudasTotal();
         const docRef = doc(db, "finanzas", "estado_principal");
-        // Asegúrate de que los timestamps sean compatibles con Firestore
         const stateToSave = { 
             ...state, 
             registros: state.registros.map(r => ({ ...r, ts: Timestamp.fromMillis(r.ts) })),
@@ -1572,9 +1566,6 @@ body {
         return total;
     }
 
-    // =========================================================================
-    // ✅ CAMBIO: Lógica de corte semanal reconfigurada
-    // =========================================================================
     function aplicarCortesPendientes() {
         const hoy = new Date();
         const ultimoJuevesHoy = inicioSemanaJueves(hoy);
@@ -1590,13 +1581,12 @@ body {
             const siguienteCorte = new Date(corte);
             siguienteCorte.setDate(siguienteCorte.getDate() + 7);
             
-            // Si la siguiente fecha de corte es posterior a hoy, no hacer el corte aún.
             if (siguienteCorte.getTime() > hoy.getTime()) {
                 break;
             }
             
             state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", siguienteCorte), ts:siguienteCorte.getTime() });
-            state.gastos = 0;
+            state.gastos = 0; // Se mantiene por si se quiere usar a futuro, pero el display ya no depende de esto.
             corte = siguienteCorte;
         }
         state.ultimaCorte = ultimoJuevesHoy.toISOString();
@@ -1629,22 +1619,14 @@ body {
           state.saldo -= monto;
         }
       } else if (tipo === "Efectivo") {
-          // Esto es para la transferencia de saldo a efectivo.
           if (monto > state.saldo) {
             mostrarNotificacion("❗ Saldo insuficiente para retirar", 'error');
             return;
           }
           state.efectivo += monto;
           state.saldo -= monto;
-          // NO se agrega el retiro a state.gastos
       } else {
-          // =========================================================================
-          // ✅ CAMBIO: Solo se modifica state.gastos si NO es un gasto de efectivo.
-          // Y se eliminó la línea que sumaba el gasto a `state.gastos` en este punto.
-          // La métrica de gastos ahora se calculará en `renderResumen()`.
-          // =========================================================================
           state.saldo -= monto;
-          
           const pagoMensual = state.pagosMensuales.find(p => p.nombre === tipo);
           if (pagoMensual) {
               pagoMensual.montoCompletado += monto;
@@ -1677,14 +1659,13 @@ body {
         const registro = {
             id: now.getTime(),
             tipo: `Efectivo: ${tipo}`,
-            monto: -monto, // Registrar como un valor negativo para distinguirlo
+            monto: -monto,
             fecha: fechaDisplay(tipo, now),
             nota: nota,
             ts: now.getTime()
         };
         state.registros.push(registro);
         
-        // NO se suma a state.gastos para evitar duplicación
         await persist();
         renderResumen();
         mostrarNotificacion("✅ Gasto de efectivo registrado");
@@ -1700,7 +1681,6 @@ body {
 
         const index = state.registros.findIndex(r => r.id == id);
         if (index === -1) {
-            // Buscamos si es un pago de deuda
             const debtPaymentIdMatch = id.match(/^pago-(\d+)-(\d+)$/);
             if (debtPaymentIdMatch) {
                 const [, debtId, pagoId] = debtPaymentIdMatch;
@@ -1728,7 +1708,6 @@ body {
         const registro = state.registros[index];
         const { tipo, monto } = registro;
 
-        // Invertir el efecto del registro en los totales
         if (tipo === "Sueldo" || tipo === "Depósito") {
             state.saldo -= monto;
         } else if (tipo === "Ahorro") {
@@ -1739,15 +1718,12 @@ body {
                 state.ahorro -= monto;
                 state.saldo += monto;
             }
-        } else if (tipo.startsWith("Efectivo: ")) { // Si es un gasto de efectivo...
-            state.efectivo -= monto; // notar que monto es negativo, por lo que suma
-        } else if (tipo === "Efectivo" && monto > 0) { // Si es una recarga a efectivo
+        } else if (tipo.startsWith("Efectivo: ")) {
+            state.efectivo -= monto;
+        } else if (tipo === "Efectivo" && monto > 0) {
             state.efectivo -= monto;
             state.saldo += monto;
         } else {
-            // =========================================================================
-            // ✅ CAMBIO: Revertir un gasto general
-            // =========================================================================
             state.saldo += monto;
         }
 
@@ -1787,9 +1763,6 @@ body {
 
     function agruparPorSemana() {
       if (!state.registros) return [];
-      // =========================================================================
-      // ✅ CAMBIO: Excluir los gastos de efectivo del historial general
-      // =========================================================================
       const grupos = new Map();
       const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
       const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
@@ -1805,9 +1778,6 @@ body {
     
     function agruparPorMes() {
         if (!state.registros) return [];
-        // =========================================================================
-        // ✅ CAMBIO: Excluir los gastos de efectivo del historial general
-        // =========================================================================
         const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
         const grupos = new Map();
         const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
@@ -1820,23 +1790,32 @@ body {
         return Array.from(grupos.values()).sort((a, b) => b.items[0].ts - a.items[0].ts);
     }
 
+    // ✅ CAMBIO: La vista semanal ahora usa <details> y <summary> para ser desplegable.
     function renderHistorial() {
       $contenedorSemanas.innerHTML = "";
       const gruposSemanas = agruparPorSemana();
-      for (const g of gruposSemanas) {
-        const divSemana = document.createElement("div");
-        divSemana.className = "semana";
-        const rango = document.createElement("div");
-        rango.className = "rango";
-        rango.textContent = rangoSemanaTexto(g.inicio);
-        divSemana.appendChild(rango);
+      gruposSemanas.forEach((g, index) => {
+        const detailsEl = document.createElement("details");
+        detailsEl.className = "semana";
+        // La semana más reciente (la primera en la lista) se muestra abierta
+        if (index === 0) {
+            detailsEl.open = true;
+        }
 
-        g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
+        const summaryEl = document.createElement("summary");
+        summaryEl.className = "rango";
+        summaryEl.textContent = rangoSemanaTexto(g.inicio);
+        detailsEl.appendChild(summaryEl);
+        
+        const registrosContainer = document.createElement("div");
+
+        g.items.sort((a,b) => b.ts - a.ts).forEach(r => {
           const registroEl = crearRegistroHTML(r);
-          divSemana.appendChild(registroEl);
+          registrosContainer.appendChild(registroEl);
         });
-        $contenedorSemanas.appendChild(divSemana);
-      }
+        detailsEl.appendChild(registrosContainer);
+        $contenedorSemanas.appendChild(detailsEl);
+      });
 
       $contenedorMeses.innerHTML = "";
       const gruposMeses = agruparPorMes();
@@ -1848,7 +1827,7 @@ body {
           rango.textContent = g.nombre;
           divMes.appendChild(rango);
 
-          g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
+          g.items.sort((a,b) => b.ts - a.ts).forEach(r => {
               const registroEl = crearRegistroHTML(r);
               divMes.appendChild(registroEl);
           });
@@ -1890,7 +1869,7 @@ body {
             rango.textContent = rangoSemanaTexto(g.inicio);
             divSemana.appendChild(rango);
 
-            g.items.sort((a,b)=>b.ts-a.ts).forEach(r => {
+            g.items.sort((a,b) => b.ts - a.ts).forEach(r => {
                 const registroEl = crearRegistroHTML(r);
                 divSemana.appendChild(registroEl);
             });
@@ -2025,25 +2004,18 @@ body {
         }
     }
 
-    // Funcionalidad de Mandado
-    // =========================================================================
-    // ✅ CAMBIO: Renderizar historial de efectivo al cambiar de pantalla
-    // =========================================================================
     function mostrarPantalla(id) {
         document.querySelectorAll('.screen').forEach(s => {
             s.classList.remove('active');
         });
         document.getElementById(id).classList.add('active');
         
-        // Ocultar/mostrar el panel de saldos
         if (id === 'main-screen') {
             $mainPanel.classList.remove('hidden');
         } else {
             $mainPanel.classList.add('hidden');
         }
 
-        // Se asegura de que el historial de efectivo se renderice CADA VEZ que
-        // se entra a esa pantalla, solucionando el problema.
         if (id === 'efectivo-screen') {
             renderHistorialEfectivo();
         }
@@ -2114,14 +2086,14 @@ body {
             return;
         }
 
-        const precio = parseFloat($mandado-precio.value);
+        const precio = parseFloat($mandadoPrecio.value);
         if (isNaN(precio) || precio <= 0) {
             mostrarNotificacion("❗ Ingresa un precio válido", 'error');
             return;
         }
 
         if (categoria === "Frutas y Verduras") {
-            cantidad = parseFloat($mandado-peso.value);
+            cantidad = parseFloat($mandadoPeso.value);
             if (isNaN(cantidad) || cantidad <= 0) {
                 mostrarNotificacion("❗ Ingresa un peso válido", 'error');
                 return;
@@ -2129,7 +2101,7 @@ body {
             monto = cantidad * precio;
             unidad = "kg";
         } else if (categoria === "Abarrotes" || categoria === "Higiene Personal" || categoria === "Carnes") {
-            cantidad = parseInt($mandado-cantidad.value);
+            cantidad = parseInt($mandadoCantidad.value);
             if (isNaN(cantidad) || cantidad <= 0) {
                 mostrarNotificacion("❗ Ingresa una cantidad válida", 'error');
                 return;
@@ -2342,7 +2314,6 @@ body {
         $themeSwitcher.textContent = savedTheme === "dark" ? "☀️" : "🌙";
     }
 
-    // Funcionalidad de Deudas
     function mostrarPantallaDeudas() {
         mostrarPantalla('deudas-screen');
         renderListaDeudas();
@@ -2471,8 +2442,9 @@ body {
         });
     }
     
+    // ✅ CORRECCIÓN: Se cambió `$deuda-pago-monto` por `$deudaPagoMonto`.
     async function registrarPago() {
-        const montoPago = parseFloat($deuda-pago-monto.value);
+        const montoPago = parseFloat($deudaPagoMonto.value);
         if (isNaN(montoPago) || montoPago <= 0) {
             mostrarNotificacion("❗ Ingresa un monto de pago válido", 'error');
             return;
@@ -2503,6 +2475,7 @@ body {
         mostrarNotificacion(`✅ Pago de ${fmt.format(montoPago)} registrado`);
         mostrarDetalleDeuda(currentDebtId);
         $deudaPagoMonto.value = '';
+        renderResumen();
     }
 
     async function eliminarPago(pagoId) {
@@ -2529,6 +2502,7 @@ body {
         await persist();
         mostrarNotificacion("🗑️ Pago eliminado");
         mostrarDetalleDeuda(currentDebtId);
+        renderResumen();
     }
     
     function mostrarPantallaPagosMensuales() {
@@ -2618,7 +2592,6 @@ body {
         });
     }
 
-    // Event Listeners
     applySavedTheme();
     
     $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value)));
@@ -2670,13 +2643,11 @@ body {
         eliminarPagoMensual(id);
     });
     
-    // EVENTOS DE LA NUEVA PANTALLA DE EFECTIVO
     $btnIrEfectivo.addEventListener('click', () => mostrarPantalla('efectivo-screen'));
     $btnVolverEfectivo.addEventListener('click', () => mostrarPantalla('main-screen'));
     $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)));
     $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)); });
     
-    // EVENTOS PARA EL MODAL DE CONCEPTOS DE EFECTIVO
     $addEfectivoConceptBtn.addEventListener('click', () => {
         $addEfectivoConceptModal.style.display = 'flex';
         $newEfectivoConceptName.value = '';
@@ -2700,11 +2671,9 @@ body {
         }
     });
 
-    // Delegación de eventos para los botones de las listas
     document.body.addEventListener('click', (event) => {
         const target = event.target;
 
-        // Botones de editar/eliminar en lista de mandado
         const mandadoBtn = target.closest('#lista-mandado .edit-item, #lista-mandado .delete-item');
         if (mandadoBtn) {
             const index = parseInt(mandadoBtn.dataset.index);
@@ -2716,7 +2685,6 @@ body {
             return;
         }
 
-        // Clic en ticket de historial de mandado o su botón de eliminar
         const mandadoHistorialItem = target.closest('#mandado-historial-lista li');
         if (mandadoHistorialItem) {
             const deleteTicketBtn = target.closest('.delete-ticket-btn');
@@ -2728,14 +2696,12 @@ body {
             return;
         }
 
-        // Botón de eliminar pago de deuda
         const deletePagoBtn = target.closest('#pagos-lista .delete-pago-btn');
         if (deletePagoBtn) {
             eliminarPago(parseInt(deletePagoBtn.dataset.pagoId));
             return;
         }
 
-        // Botón de eliminar en historial general y de efectivo
         const deleteRegistroBtn = target.closest('.delete-btn');
         if(deleteRegistroBtn) {
             eliminarRegistro(parseInt(deleteRegistroBtn.dataset.id));
