@@ -694,6 +694,10 @@ body {
         margin-bottom: 0;
         cursor: pointer;
         outline: none;
+        list-style: '▶ ';
+    }
+    details[open] > summary.rango {
+        list-style: '▼ ';
     }
 
     .registro {
@@ -737,6 +741,13 @@ body {
       font-size: 12px;
       grid-column: 1 / -1;
       text-align: right;
+    }
+    .registro .detalles {
+      grid-column: 1 / -1;
+      font-size: 13px;
+      color: var(--text-light);
+      font-style: italic;
+      padding: 0 0 4px 24px;
     }
     
     /* Estilos para el historial de pagos de deudas */
@@ -999,6 +1010,10 @@ body {
         </select>
         <button class="btn" id="btn-confirmar">Confirmar</button>
       </section>
+      <div style="width: 100%; max-width: 560px; margin-top: -6px;">
+          <input type="text" id="detalles" placeholder="Detalles (opcional)" style="width: 100%;" />
+      </div>
+
       <button id="add-category-btn">➕ Añadir categoría de gasto</button>
 
       <section class="actions">
@@ -1022,11 +1037,11 @@ body {
         <div id="contenedorSemanas" class="historial-content"></div>
         <div id="contenedorMeses" class="historial-content" style="display: none;"></div>
         <div id="chart-container" class="historial-content" style="display: none;">
-            <h3>Distribución de Gastos</h3>
+            <h3>Distribución de Gastos (Semana Actual)</h3>
             <canvas id="chart"></canvas>
         </div>
         <div id="line-chart-container" class="historial-content" style="display: none;">
-            <h3>Tendencia de Gastos</h3>
+            <h3>Tendencia de Gastos por Día</h3>
             <canvas id="line-chart"></canvas>
         </div>
       </section>
@@ -1053,6 +1068,7 @@ body {
                 <option value="Tienda">Tienda</option>
                 <option value="Otros">Otros</option>
             </select>
+            <input type="text" id="detalles-efectivo" placeholder="Detalles (opcional)" />
             <button class="btn" id="btn-confirmar-efectivo">Confirmar</button>
         </div>
         <button id="add-efectivo-category-btn">➕ Añadir concepto</button>
@@ -1341,6 +1357,7 @@ body {
     const $deudasTotal = document.getElementById("deudas-total");
     const $monto = document.getElementById("monto");
     const $tipo  = document.getElementById("tipo");
+    const $detalles = document.getElementById("detalles"); // ✅
     const $btnConfirmar = document.getElementById("btn-confirmar");
     const $btnHistorial = document.getElementById("btn-historial");
     const $btnMandado = document.getElementById("btn-mandado");
@@ -1414,6 +1431,7 @@ body {
     const $efectivoTotal = document.getElementById('efectivo-total');
     const $montoEfectivo = document.getElementById('monto-efectivo');
     const $tipoEfectivo = document.getElementById('tipo-efectivo');
+    const $detallesEfectivo = document.getElementById('detalles-efectivo'); // ✅
     const $btnConfirmarEfectivo = document.getElementById('btn-confirmar-efectivo');
     const $efectivoHistorial = document.getElementById('efectivo-historial');
     const $contenedorSemanasEfectivo = document.getElementById('contenedorSemanasEfectivo');
@@ -1473,7 +1491,6 @@ body {
         $tipoEfectivo.appendChild(fragmentEfectivo);
     }
 
-    // ✅ CAMBIO: La barra de gastos ahora usa una función que calcula solo los de la semana actual.
     function renderResumen() {
       $saldo.textContent  = fmt.format(state.saldo || 0);
       $ahorro.textContent = fmt.format(state.ahorro || 0);
@@ -1482,7 +1499,6 @@ body {
       $efectivoTotal.textContent = fmt.format(state.efectivo || 0);
     }
     
-    // ✅ NUEVA FUNCIÓN: Calcula los gastos de la semana en curso (Jueves a Miércoles).
     function calcularGastosSemanales() {
         if (!state.registros) return 0;
         
@@ -1495,14 +1511,11 @@ body {
         state.registros.forEach(r => {
             const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
 
-            // Se considera gasto si:
-            // 1. Es un tipo de gasto conocido.
-            // 2. Es un retiro a la cuenta de "Efectivo".
-            const esGasto = tiposDeGasto.includes(r.tipo);
-            const esRetiroEfectivo = r.tipo === "Efectivo";
+            const esGasto = tiposDeGasto.includes(r.tipo) && r.monto > 0;
+            const esRetiroEfectivo = r.tipo === "Efectivo" && r.monto > 0;
 
             if (fechaRegistro >= inicioSemanaActual && (esGasto || esRetiroEfectivo)) {
-                gastosSemanales += Math.abs(r.monto);
+                gastosSemanales += r.monto;
             }
         });
         
@@ -1586,7 +1599,7 @@ body {
             }
             
             state.registros.push({ id: Date.now(), tipo:"CIERRE", monto:0, fecha:fechaDisplay("Otros", siguienteCorte), ts:siguienteCorte.getTime() });
-            state.gastos = 0; // Se mantiene por si se quiere usar a futuro, pero el display ya no depende de esto.
+            state.gastos = 0;
             corte = siguienteCorte;
         }
         state.ultimaCorte = ultimoJuevesHoy.toISOString();
@@ -1594,7 +1607,7 @@ body {
     }
 
 
-    async function agregarRegistro(tipo, monto, id = null, isEfectivo = false) {
+    async function agregarRegistro(tipo, monto, detalles = '', id = null) { // ✅ Se añade 'detalles'
       if (isNaN(monto) || monto === 0) {
         mostrarNotificacion("❗ Monto inválido", 'error');
         return;
@@ -1605,7 +1618,8 @@ body {
           tipo,
           monto,
           fecha: fechaDisplay(tipo, now),
-          ts: now.getTime()
+          ts: now.getTime(),
+          detalles: detalles // ✅ Se guarda el detalle
       };
 
       if (tipo === "Sueldo" || tipo === "Depósito") {
@@ -1640,9 +1654,13 @@ body {
       renderHistorial();
       renderPagosMensualesList();
       renderHistorialEfectivo();
+      
+      // ✅ Limpiar campos
+      $monto.value = '';
+      $detalles.value = '';
     }
     
-    async function agregarGastoEfectivo(tipo, monto, nota = '') {
+    async function agregarGastoEfectivo(tipo, monto, detalles = '') { // ✅ Se cambia 'nota' por 'detalles'
         if (isNaN(monto) || monto <= 0) {
             mostrarNotificacion("❗ Monto inválido", 'error');
             return;
@@ -1661,7 +1679,7 @@ body {
             tipo: `Efectivo: ${tipo}`,
             monto: -monto,
             fecha: fechaDisplay(tipo, now),
-            nota: nota,
+            detalles: detalles, // ✅ Se guarda el detalle
             ts: now.getTime()
         };
         state.registros.push(registro);
@@ -1669,9 +1687,13 @@ body {
         await persist();
         renderResumen();
         mostrarNotificacion("✅ Gasto de efectivo registrado");
+        renderHistorial(); 
         renderHistorialEfectivo();
+        
+        // ✅ Limpiar campos de efectivo
         $montoEfectivo.value = '';
-        $tipoEfectivo.value = "Otros";
+        $detallesEfectivo.value = '';
+        $tipoEfectivo.value = "Mandado";
     }
 
     async function eliminarRegistro(id) {
@@ -1757,15 +1779,22 @@ body {
         div.className = "registro";
         const icono = obtenerIconoTipo(registro.tipo);
         const montoDisplay = registro.monto < 0 ? fmt.format(Math.abs(registro.monto)) : fmt.format(registro.monto);
-        div.innerHTML = `<div class="tipo"><span class="icono">${icono}</span>${registro.tipo}</div><div class="monto">${montoDisplay}</div><button class="delete-btn" data-id="${registro.id}">✖️</button><div class="fecha">${registro.fecha}</div>`;
+        
+        let html = `<div class="tipo"><span class="icono">${icono}</span>${registro.tipo}</div><div class="monto">${montoDisplay}</div><button class="delete-btn" data-id="${registro.id}">✖️</button><div class="fecha">${registro.fecha}</div>`;
+        
+        // ✅ Añadir detalles si existen
+        if (registro.detalles) {
+            html += `<div class="detalles">${registro.detalles}</div>`;
+        }
+        
+        div.innerHTML = html;
         return div;
     }
 
     function agruparPorSemana() {
       if (!state.registros) return [];
       const grupos = new Map();
-      const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
-      const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
+      const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
       
       for (const r of registrosConFechas) {
         const inicio = inicioSemanaJueves(r.ts);
@@ -1778,26 +1807,23 @@ body {
     
     function agruparPorMes() {
         if (!state.registros) return [];
-        const registrosFiltrados = state.registros.filter(r => !r.tipo.startsWith("Efectivo: "));
         const grupos = new Map();
-        const registrosConFechas = registrosFiltrados.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
+        const registrosConFechas = state.registros.map(r => ({ ...r, ts: r.ts instanceof Timestamp ? r.ts.toDate().getTime() : r.ts }));
         
         for (const r of registrosConFechas) {
             const mesAno = obtenerMesAno(r.ts);
             if (!grupos.has(mesAno)) grupos.set(mesAno, { nombre: mesAno, items: [] });
             grupos.get(mesAno).items.push(r);
         }
-        return Array.from(grupos.values()).sort((a, b) => b.items[0].ts - a.items[0].ts);
+        return Array.from(grupos.values()).sort((a, b) => new Date(b.items[0].ts) - new Date(a.items[0].ts));
     }
 
-    // ✅ CAMBIO: La vista semanal ahora usa <details> y <summary> para ser desplegable.
     function renderHistorial() {
       $contenedorSemanas.innerHTML = "";
       const gruposSemanas = agruparPorSemana();
       gruposSemanas.forEach((g, index) => {
         const detailsEl = document.createElement("details");
         detailsEl.className = "semana";
-        // La semana más reciente (la primera en la lista) se muestra abierta
         if (index === 0) {
             detailsEl.open = true;
         }
@@ -1839,12 +1865,11 @@ body {
       });
     }
 
-    function renderHistorialEfectivo() {
+    function renderHistorialEfectivo() { // ✅ FUNCIÓN MODIFICADA PARA SER PLEGABLE
         $contenedorSemanasEfectivo.innerHTML = "";
-        const gastosEfectivo = state.registros.filter(r => r.monto < 0 && r.tipo.startsWith("Efectivo: "));
-        const recargasEfectivo = state.registros.filter(r => r.tipo === "Efectivo" && r.monto > 0);
-        
-        const todosLosRegistrosEfectivo = [...gastosEfectivo, ...recargasEfectivo].sort((a, b) => b.ts - a.ts);
+        const todosLosRegistrosEfectivo = state.registros
+            .filter(r => r.tipo === "Efectivo" || r.tipo.startsWith("Efectivo: "))
+            .sort((a, b) => b.ts - a.ts);
 
         if (todosLosRegistrosEfectivo.length === 0) {
             $efectivoHistorial.style.display = 'none';
@@ -1861,26 +1886,41 @@ body {
         }
         
         const gruposSemanasEfectivo = Array.from(grupos.values()).sort((a,b) => b.inicio - a.inicio);
-        for (const g of gruposSemanasEfectivo) {
-            const divSemana = document.createElement("div");
-            divSemana.className = "semana";
-            const rango = document.createElement("div");
-            rango.className = "rango";
-            rango.textContent = rangoSemanaTexto(g.inicio);
-            divSemana.appendChild(rango);
+        
+        gruposSemanasEfectivo.forEach((g, index) => {
+            const detailsEl = document.createElement("details");
+            detailsEl.className = "semana";
+            if (index === 0) { // Abrir la semana más reciente
+                detailsEl.open = true;
+            }
 
+            const summaryEl = document.createElement("summary");
+            summaryEl.className = "rango";
+            summaryEl.textContent = rangoSemanaTexto(g.inicio);
+            detailsEl.appendChild(summaryEl);
+            
+            const registrosContainer = document.createElement("div");
             g.items.sort((a,b) => b.ts - a.ts).forEach(r => {
                 const registroEl = crearRegistroHTML(r);
-                divSemana.appendChild(registroEl);
+                registrosContainer.appendChild(registroEl);
             });
-            $contenedorSemanasEfectivo.appendChild(divSemana);
-        }
+            detailsEl.appendChild(registrosContainer);
+            $contenedorSemanasEfectivo.appendChild(detailsEl);
+        });
     }
 
-    function renderChart() {
+    function renderChart() { // ✅ FUNCIÓN MODIFICADA PARA FILTRAR POR SEMANA
+        const hoy = new Date();
+        const inicioSemanaActual = inicioSemanaJueves(hoy);
+        
+        const tiposDeGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || []), ...(state.pagosMensuales || []).map(p => p.nombre)];
+
         const gastos = (state.registros || []).filter(r => {
-            const tipoGastos = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", "CIERRE", "Efectivo", ...(state.customCategories || [])];
-            return tipoGastos.includes(r.tipo) && r.monto > 0;
+            const fechaRegistro = new Date(r.ts instanceof Timestamp ? r.ts.toDate() : r.ts);
+            const esGasto = tiposDeGasto.includes(r.tipo) && r.monto > 0;
+            const esRetiroEfectivo = r.tipo === "Efectivo" && r.monto > 0;
+
+            return fechaRegistro >= inicioSemanaActual && (esGasto || esRetiroEfectivo);
         });
         
         const gastosPorCategoria = gastos.reduce((acc, curr) => {
@@ -1921,17 +1961,27 @@ body {
         });
     }
     
-    function renderLineChart() {
-        const gastos = (state.registros || []).filter(r => r.monto > 0 && r.tipo !== "Sueldo" && r.tipo !== "Depósito" && r.tipo !== "Ahorro" && r.tipo !== "CIERRE" && !r.tipo.startsWith("Efectivo: "));
-        const gastosPorFecha = gastos.reduce((acc, curr) => {
-            const date = new Date(curr.ts instanceof Timestamp ? curr.ts.toDate() : curr.ts).toISOString().slice(0, 10);
-            if (!acc[date]) acc[date] = 0;
-            acc[date] += curr.monto;
+    function renderLineChart() { // ✅ FUNCIÓN CORREGIDA/VERIFICADA
+        const tiposDeGasto = ["Mandado", "Telmex", "CFE", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros", ...(state.customCategories || []), ...(state.pagosMensuales || []).map(p => p.nombre)];
+
+        const gastos = (state.registros || []).filter(r => {
+            const esGasto = tiposDeGasto.includes(r.tipo) && r.monto > 0;
+            const esRetiroEfectivo = r.tipo === "Efectivo" && r.monto > 0;
+            const esGastoEfectivo = r.tipo.startsWith("Efectivo: ") && r.monto < 0;
+            return esGasto || esRetiroEfectivo || esGastoEfectivo;
+        });
+
+        const gastosPorDia = gastos.reduce((acc, curr) => {
+            const fecha = new Date(curr.ts).toISOString().slice(0, 10); // Agrupar por día YYYY-MM-DD
+            if (!acc[fecha]) {
+                acc[fecha] = 0;
+            }
+            acc[fecha] += Math.abs(curr.monto);
             return acc;
         }, {});
-        
-        const labels = Object.keys(gastosPorFecha).sort();
-        const data = labels.map(date => gastosPorFecha[date]);
+
+        const labels = Object.keys(gastosPorDia).sort(); // Ordenar fechas
+        const data = labels.map(fecha => gastosPorDia[fecha]);
         
         if (myLineChart) myLineChart.destroy();
         
@@ -1955,17 +2005,32 @@ body {
                     x: {
                         type: 'time',
                         time: {
-                            unit: 'day'
+                            unit: 'day',
+                            tooltipFormat: 'dd MMM yyyy'
                         },
                         title: {
                             display: true,
                             text: 'Fecha'
+                        },
+                        ticks: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-light')
                         }
                     },
                     y: {
+                        beginAtZero: true,
                         title: {
                             display: true,
                             text: 'Monto'
+                        },
+                        ticks: {
+                             color: getComputedStyle(document.body).getPropertyValue('--text-light')
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: getComputedStyle(document.body).getPropertyValue('--text-light')
                         }
                     }
                 }
@@ -2241,7 +2306,7 @@ body {
         };
         state.mandadoTickets.push(ticketCompleto);
         
-        await agregarRegistro("Mandado", mandadoTicket.total);
+        await agregarRegistro("Mandado", mandadoTicket.total, 'Ticket de mandado'); // ✅ Pasamos un detalle genérico
 
         await persist();
         mostrarNotificacion("✅ Ticket guardado en el historial");
@@ -2442,7 +2507,6 @@ body {
         });
     }
     
-    // ✅ CORRECCIÓN: Se cambió `$deuda-pago-monto` por `$deudaPagoMonto`.
     async function registrarPago() {
         const montoPago = parseFloat($deudaPagoMonto.value);
         if (isNaN(montoPago) || montoPago <= 0) {
@@ -2594,8 +2658,9 @@ body {
 
     applySavedTheme();
     
-    $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value)));
-    $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro($tipo.value, parseFloat($monto.value)); });
+    // ✅ Event Listeners actualizados para manejar el campo de detalles
+    $btnConfirmar.addEventListener("click", () => agregarRegistro($tipo.value, parseFloat($monto.value), $detalles.value.trim()));
+    $monto.addEventListener("keydown", e => { if (e.key === "Enter") agregarRegistro($tipo.value, parseFloat($monto.value), $detalles.value.trim()); });
     $btnHistorial.addEventListener("click", toggleHistorial);
     $tabs.forEach(tab => tab.addEventListener('click', handleTabClick));
     
@@ -2645,8 +2710,8 @@ body {
     
     $btnIrEfectivo.addEventListener('click', () => mostrarPantalla('efectivo-screen'));
     $btnVolverEfectivo.addEventListener('click', () => mostrarPantalla('main-screen'));
-    $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)));
-    $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value)); });
+    $btnConfirmarEfectivo.addEventListener('click', () => agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value), $detallesEfectivo.value.trim()));
+    $montoEfectivo.addEventListener('keydown', e => { if (e.key === 'Enter') agregarGastoEfectivo($tipoEfectivo.value, parseFloat($montoEfectivo.value), $detallesEfectivo.value.trim()); });
     
     $addEfectivoConceptBtn.addEventListener('click', () => {
         $addEfectivoConceptModal.style.display = 'flex';
