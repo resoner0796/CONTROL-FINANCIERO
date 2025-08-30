@@ -59,7 +59,9 @@ body {
   
   /* Corrección para evitar el zoom en inputs en iOS */
   input[type="number"]:focus,
-  input[type="text"]:focus {
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus {
     font-size: 16px; /* Asegura un tamaño mínimo que evita el zoom */
   }
 
@@ -137,11 +139,19 @@ body {
       letter-spacing: .2px;
       color: var(--text-color);
     }
+    .header-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        max-width: 560px;
+        position: relative;
+    }
     
     .theme-switcher {
       position: absolute;
-      top: 16px;
-      right: 16px;
+      top: 0;
+      right: 0;
       font-size: 24px;
       background: none;
       border: none;
@@ -149,6 +159,61 @@ body {
       cursor: pointer;
       line-height: 1;
     }
+
+    #btn-logout {
+        position: absolute;
+        top: 4px;
+        left: 0;
+        font-size: 18px;
+        background: none;
+        border: none;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: 0;
+    }
+
+    /* ====== AUTH SCREEN ====== */
+    #auth-screen {
+        justify-content: center;
+        width: 100%;
+        max-width: 400px;
+        gap: 20px;
+    }
+    #auth-screen h2 {
+        margin: 0;
+    }
+    .auth-form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 16px;
+    }
+    .auth-form input {
+        border: 1px solid var(--input-border);
+        background: var(--input-bg);
+        color: var(--text-color);
+        border-radius: 12px;
+        padding: 12px 12px;
+        font-size: 16px;
+        outline: none;
+        width: 100%;
+    }
+    .auth-toggle {
+        text-align: center;
+        color: var(--text-light);
+        font-size: 14px;
+    }
+    .auth-toggle a {
+        color: var(--primary-btn-bg);
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
 
     /* ====== PANEL SUPERIOR ====== */
     .panel {
@@ -205,6 +270,14 @@ body {
     .metric.efectivo .value { color: #50c878; }
 
     /* ====== MAIN FORM & ACTIONS ====== */
+    #app-container {
+        display: none; /* Oculto por defecto */
+        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+    }
+
     .screen {
         width: 100%;
         max-width: 560px;
@@ -253,6 +326,7 @@ body {
       transition: transform .06s ease, background .2s ease;
       background: var(--primary-btn-bg);
       border-color: var(--primary-btn-bg);
+      width: 100%;
     }
     .btn:active { transform: translateY(1px); }
     .btn.secundario {
@@ -966,243 +1040,263 @@ body {
   </style>
 </head>
 <body>
-  <h1>💰 Mi Control Financiero</h1>
-  <button id="theme-switcher" class="theme-switcher">☀️</button>
 
-  <section id="main-panel" class="panel">
-    <div class="metrics">
-      <div class="metric ahorro">
-        <div class="label">Ahorro</div>
-        <div id="ahorro" class="value">$0.00</div>
-      </div>
-      <div class="metric saldo">
-        <div class="label">Saldo total</div>
-        <div id="saldo" class="value">$0.00</div>
-      </div>
-      <div class="metric gastos">
-        <div class="label">Gastos (Semana)</div>
-        <div id="gastos" class="value">$0.00</div>
-      </div>
-      <div class="metric deudas">
-        <div class="label">Deudas</div>
-        <div id="deudas-total" class="value">$0.00</div>
-      </div>
-    </div>
-  </section>
+  <div id="auth-screen" class="screen active">
+      <h2>💰 Control Financiero</h2>
+      
+      <form id="login-form" class="auth-form">
+          <h3>Iniciar Sesión</h3>
+          <input type="email" id="login-email" placeholder="Correo electrónico" required>
+          <input type="password" id="login-password" placeholder="Contraseña" required>
+          <button type="submit" class="btn">Ingresar</button>
+          <p class="auth-toggle">¿No tienes cuenta? <a id="show-register">Regístrate</a></p>
+      </form>
 
-  <div id="main-screen" class="screen active">
-      <section class="input-area">
-        <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar de Ahorro)" />
-        <select id="tipo">
-          <option value="Sueldo">Sueldo</option>
-          <option value="Depósito">Depósito</option>
-          <option value="Ahorro">Ahorro</option>
-          <option value="Mandado">Mandado</option>
-          <option value="Efectivo">Efectivo</option>
-          <option value="Telmex">Telmex</option>
-          <option value="CFE">CFE</option>
-          <option value="Tienda">Tienda</option>
-          <option value="Corning">Corning</option>
-          <option value="Didi">Didi</option>
-          <option value="iCloud">iCloud</option>
-          <option value="Coppel">Coppel</option>
-          <option value="Otros">Otros</option>
-        </select>
-        <button class="btn" id="btn-confirmar">Confirmar</button>
-      </section>
-      <div style="width: 100%; max-width: 560px; margin-top: -6px;">
-          <input type="text" id="detalles" placeholder="Detalles (opcional)" style="width: 100%;" />
+      <form id="register-form" class="auth-form" style="display: none;">
+          <h3>Crear Cuenta</h3>
+          <input type="email" id="register-email" placeholder="Correo electrónico" required>
+          <input type="password" id="register-password" placeholder="Contraseña (mín. 6 caracteres)" required>
+          <button type="submit" class="btn">Registrar</button>
+          <p class="auth-toggle">¿Ya tienes cuenta? <a id="show-login">Inicia Sesión</a></p>
+      </form>
+  </div>
+
+  <div id="app-container">
+      <div class="header-container">
+          <button id="btn-logout" title="Cerrar Sesión">🚪</button>
+          <h1>💰 Mi Control Financiero</h1>
+          <button id="theme-switcher" class="theme-switcher">☀️</button>
       </div>
-
-      <button id="add-category-btn">➕ Añadir categoría de gasto</button>
-
-      <section class="actions">
-        <button class="btn secundario" id="btn-historial">📜 Ver historial y análisis</button>
-        <button class="btn secundario" id="btn-mandado">🛒 Ir al Mandado</button>
-      </section>
-      <button id="add-debt-btn">📝 Gestionar deudas</button>
-      <button id="add-monthly-payment-btn">🗓️ Pagos mensuales</button>
-      <button id="btn-ir-efectivo">💵 Efectivo</button>
-
-      <section id="historial">
-        <header>
-          Historial
-          <div class="tabs">
-              <div class="tab active" data-view="semana">Semanal</div>
-              <div class="tab" data-view="mes">Mensual</div>
-              <div class="tab" data-view="analisis">Análisis</div>
-              <div class="tab" data-view="line-chart">Tendencias</div>
+      
+      <section id="main-panel" class="panel">
+        <div class="metrics">
+          <div class="metric ahorro">
+            <div class="label">Ahorro</div>
+            <div id="ahorro" class="value">$0.00</div>
           </div>
+          <div class="metric saldo">
+            <div class="label">Saldo total</div>
+            <div id="saldo" class="value">$0.00</div>
+          </div>
+          <div class="metric gastos">
+            <div class="label">Gastos (Semana)</div>
+            <div id="gastos" class="value">$0.00</div>
+          </div>
+          <div class="metric deudas">
+            <div class="label">Deudas</div>
+            <div id="deudas-total" class="value">$0.00</div>
+          </div>
+        </div>
+      </section>
+
+      <div id="main-screen" class="screen active">
+          <section class="input-area">
+            <input type="number" id="monto" placeholder="Monto (ej. 2000, -200 para retirar de Ahorro)" />
+            <select id="tipo">
+              <option value="Sueldo">Sueldo</option>
+              <option value="Depósito">Depósito</option>
+              <option value="Ahorro">Ahorro</option>
+              <option value="Mandado">Mandado</option>
+              <option value="Efectivo">Efectivo</option>
+              <option value="Telmex">Telmex</option>
+              <option value="CFE">CFE</option>
+              <option value="Tienda">Tienda</option>
+              <option value="Corning">Corning</option>
+              <option value="Didi">Didi</option>
+              <option value="iCloud">iCloud</option>
+              <option value="Coppel">Coppel</option>
+              <option value="Otros">Otros</option>
+            </select>
+            <button class="btn" id="btn-confirmar">Confirmar</button>
+          </section>
+          <div style="width: 100%; max-width: 560px; margin-top: -6px;">
+              <input type="text" id="detalles" placeholder="Detalles (opcional)" style="width: 100%;" />
+          </div>
+
+          <button id="add-category-btn">➕ Añadir categoría de gasto</button>
+
+          <section class="actions">
+            <button class="btn secundario" id="btn-historial">📜 Ver historial y análisis</button>
+            <button class="btn secundario" id="btn-mandado">🛒 Ir al Mandado</button>
+          </section>
+          <button id="add-debt-btn">📝 Gestionar deudas</button>
+          <button id="add-monthly-payment-btn">🗓️ Pagos mensuales</button>
+          <button id="btn-ir-efectivo">💵 Efectivo</button>
+
+          <section id="historial">
+            <header>
+              Historial
+              <div class="tabs">
+                  <div class="tab active" data-view="semana">Semanal</div>
+                  <div class="tab" data-view="mes">Mensual</div>
+                  <div class="tab" data-view="analisis">Análisis</div>
+                  <div class="tab" data-view="line-chart">Tendencias</div>
+              </div>
+            </header>
+            <div id="contenedorSemanas" class="historial-content"></div>
+            <div id="contenedorMeses" class="historial-content" style="display: none;"></div>
+            <div id="chart-container" class="historial-content" style="display: none;">
+                <h3>Distribución de Gastos (Semana Actual)</h3>
+                <canvas id="chart"></canvas>
+            </div>
+            <div id="line-chart-container" class="historial-content" style="display: none;">
+                <h3>Tendencia de Gastos por Día</h3>
+                <canvas id="line-chart"></canvas>
+            </div>
+          </section>
+      </div>
+      
+      <section id="efectivo-screen" class="screen">
+          <header>
+              <h2>Administrar Efectivo</h2>
+              <button class="btn secundario" id="btn-volver-efectivo">Volver</button>
+          </header>
+          <section class="panel">
+              <div class="metrics">
+                  <div class="metric efectivo">
+                      <div class="label">Efectivo Total</div>
+                      <div id="efectivo-total" class="value">$0.00</div>
+                  </div>
+              </div>
+          </section>
+          <section class="efectivo-actions">
+            <div class="input-area">
+                <input type="number" id="monto-efectivo" placeholder="Monto" />
+                <select id="tipo-efectivo">
+                    <option value="Mandado">Mandado</option>
+                    <option value="Tienda">Tienda</option>
+                    <option value="Otros">Otros</option>
+                </select>
+                <input type="text" id="detalles-efectivo" placeholder="Detalles (opcional)" />
+                <button class="btn" id="btn-confirmar-efectivo">Confirmar</button>
+            </div>
+            <button id="add-efectivo-category-btn">➕ Añadir concepto</button>
+          </section>
+          <section id="efectivo-historial">
+              <header>Historial de gastos en efectivo</header>
+              <div id="contenedorSemanasEfectivo" class="historial-content"></div>
+          </section>
+      </section>
+
+      <section id="mandado-screen" class="screen">
+          <header>
+              <h2>Ticket del Mandado</h2>
+              <button class="btn secundario" id="btn-volver-mandado">Volver</button>
+          </header>
+          
+          <div class="input-item">
+              <select id="mandado-categoria">
+                  <option value="">Selecciona Categoría</option>
+                  <option value="Frutas y Verduras">Frutas y Verduras</option>
+                  <option value="Abarrotes">Abarrotes</option>
+                  <option value="Higiene Personal">Higiene Personal</option>
+                  <option value="Carnes">Carnes</option>
+                  <option value="Otros">Otros</option>
+              </select>
+              <select id="mandado-producto" style="display: none;"></select>
+              <input type="text" id="nombre-articulo" placeholder="Nombre del artículo" style="display: none;">
+
+              <div class="grid-inputs">
+                  <input type="text" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" style="display: none;" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*">
+                  <input type="number" id="mandado-cantidad" placeholder="Cantidad" step="1" style="display: none;" inputmode="numeric" pattern="[0-9]*">
+                  <input type="text" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" style="display: none;" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*">
+              </div>
+              <button class="btn" id="btn-agregar-articulo" style="display: none;">➕ Agregar</button>
+          </div>
+
+          <ul id="lista-mandado"></ul>
+
+          <div class="total-container">
+              <span>Total del ticket:</span>
+              <span class="valor" id="total-ticket">$0.00</span>
+          </div>
+
+          <div id="mandado-categoria-totales"></div>
+
+          <button class="btn secundario" id="btn-historial-mandado">🧾 Historial de mandados</button>
+          <button class="btn" id="btn-guardar-ticket">✅ Guardar Ticket</button>
+      </section>
+
+      <section id="mandado-historial-screen" class="screen">
+        <header>
+          <h2>Historial de Mandados</h2>
+          <button class="btn secundario" id="btn-volver-historial">Volver</button>
         </header>
-        <div id="contenedorSemanas" class="historial-content"></div>
-        <div id="contenedorMeses" class="historial-content" style="display: none;"></div>
-        <div id="chart-container" class="historial-content" style="display: none;">
-            <h3>Distribución de Gastos (Semana Actual)</h3>
-            <canvas id="chart"></canvas>
+        <ul id="mandado-historial-lista"></ul>
+      </section>
+
+      <section id="mandado-detalle-screen" class="screen">
+        <header>
+          <h2 id="detalle-titulo"></h2>
+          <button class="btn secundario" id="btn-volver-detalle">Volver</button>
+        </header>
+        <ul id="mandado-detalle-lista"></ul>
+        <div class="total-container">
+            <span>Total del ticket:</span>
+            <span class="valor" id="detalle-total">$0.00</span>
         </div>
-        <div id="line-chart-container" class="historial-content" style="display: none;">
-            <h3>Tendencia de Gastos por Día</h3>
-            <canvas id="line-chart"></canvas>
+      </section>
+      
+      <section id="deudas-screen" class="screen">
+        <header>
+            <h2>Gestionar Deudas</h2>
+            <button class="btn secundario" id="btn-volver-deudas">Volver</button>
+        </header>
+        <div class="input-item">
+            <input type="text" id="deuda-nombre" placeholder="Nombre de la deuda" />
+            <input type="number" id="deuda-monto-inicial" placeholder="Monto inicial" />
+            <button class="btn" id="btn-agregar-deuda">➕ Agregar Deuda</button>
         </div>
+        <ul id="deudas-lista"></ul>
+      </section>
+
+      <section id="deuda-detalle-screen" class="screen">
+        <header>
+            <h2 id="deuda-detalle-titulo"></h2>
+            <button class="btn secundario" id="btn-volver-deuda-detalle">Volver</button>
+        </header>
+        <div class="deuda-info">
+            <span class="titulo" id="deuda-info-nombre"></span>
+            <span class="monto" id="deuda-info-pendiente"></span>
+            <div class="progress-container">
+                <div id="progress-bar" class="progress-bar-container">
+                    <div class="progress-bar"></div>
+                </div>
+                <span id="progress-text" class="progress-text">0%</span>
+            </div>
+            <div class="deuda-proyeccion">
+                <div class="input-group">
+                    <label for="promedio-pago-input" class="label-proyeccion">Promedio de pago: </label>
+                    <input type="number" id="promedio-pago-input" placeholder="$" step="0.01" />
+                </div>
+                <div class="input-group">
+                    <label for="promedio-dias-input" class="label-proyeccion">Días entre pagos: </label>
+                    <input type="number" id="promedio-dias-input" placeholder="#" step="1" />
+                </div>
+                <span class="label-proyeccion">Fecha de liquidación estimada: <span class="valor-proyeccion" id="fecha-liquidación">--</span></span>
+            </div>
+            <div class="input-area" style="grid-template-columns: 1fr auto;">
+                <input type="number" id="deuda-pago-monto" placeholder="Monto a pagar" />
+                <button class="btn" id="btn-registrar-pago">✅ Pagar</button>
+            </div>
+        </div>
+        <h3>Historial de pagos</h3>
+        <ul id="pagos-lista"></ul>
+      </section>
+
+      <section id="pagos-mensuales-screen" class="screen">
+        <header>
+            <h2>Pagos mensuales</h2>
+            <button class="btn secundario" id="btn-volver-pagos-mensuales">Volver</button>
+        </header>
+        <div class="input-item">
+            <input type="text" id="pago-mensual-nombre" placeholder="Nombre del pago (ej. Telmex)" />
+            <input type="number" id="pago-mensual-monto" placeholder="Monto total del mes" />
+            <button class="btn" id="btn-agregar-pago-mensual">➕ Agregar pago</button>
+        </div>
+        <ul id="pagos-mensuales-lista"></ul>
       </section>
   </div>
-  
-  <section id="efectivo-screen" class="screen">
-      <header>
-          <h2>Administrar Efectivo</h2>
-          <button class="btn secundario" id="btn-volver-efectivo">Volver</button>
-      </header>
-      <section class="panel">
-          <div class="metrics">
-              <div class="metric efectivo">
-                  <div class="label">Efectivo Total</div>
-                  <div id="efectivo-total" class="value">$0.00</div>
-              </div>
-          </div>
-      </section>
-      <section class="efectivo-actions">
-        <div class="input-area">
-            <input type="number" id="monto-efectivo" placeholder="Monto" />
-            <select id="tipo-efectivo">
-                <option value="Mandado">Mandado</option>
-                <option value="Tienda">Tienda</option>
-                <option value="Otros">Otros</option>
-            </select>
-            <input type="text" id="detalles-efectivo" placeholder="Detalles (opcional)" />
-            <button class="btn" id="btn-confirmar-efectivo">Confirmar</button>
-        </div>
-        <button id="add-efectivo-category-btn">➕ Añadir concepto</button>
-      </section>
-      <section id="efectivo-historial">
-          <header>Historial de gastos en efectivo</header>
-          <div id="contenedorSemanasEfectivo" class="historial-content"></div>
-      </section>
-  </section>
-
-  <section id="mandado-screen" class="screen">
-      <header>
-          <h2>Ticket del Mandado</h2>
-          <button class="btn secundario" id="btn-volver-mandado">Volver</button>
-      </header>
-      
-      <div class="input-item">
-          <select id="mandado-categoria">
-              <option value="">Selecciona Categoría</option>
-              <option value="Frutas y Verduras">Frutas y Verduras</option>
-              <option value="Abarrotes">Abarrotes</option>
-              <option value="Higiene Personal">Higiene Personal</option>
-              <option value="Carnes">Carnes</option>
-              <option value="Otros">Otros</option>
-          </select>
-          <select id="mandado-producto" style="display: none;"></select>
-          <input type="text" id="nombre-articulo" placeholder="Nombre del artículo" style="display: none;">
-
-          <div class="grid-inputs">
-              <input type="text" id="mandado-peso" placeholder="Peso (ej. 0.800 kg)" style="display: none;" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*">
-              <input type="number" id="mandado-cantidad" placeholder="Cantidad" step="1" style="display: none;" inputmode="numeric" pattern="[0-9]*">
-              <input type="text" id="mandado-precio" placeholder="Precio (ej. 20.00 pz)" style="display: none;" inputmode="decimal" pattern="[0-9]*[.]?[0-9]*">
-          </div>
-          <button class="btn" id="btn-agregar-articulo" style="display: none;">➕ Agregar</button>
-      </div>
-
-      <ul id="lista-mandado">
-          </ul>
-
-      <div class="total-container">
-          <span>Total del ticket:</span>
-          <span class="valor" id="total-ticket">$0.00</span>
-      </div>
-
-      <div id="mandado-categoria-totales">
-      </div>
-
-      <button class="btn secundario" id="btn-historial-mandado">🧾 Historial de mandados</button>
-      <button class="btn" id="btn-guardar-ticket">✅ Guardar Ticket</button>
-  </section>
-
-  <section id="mandado-historial-screen" class="screen">
-    <header>
-      <h2>Historial de Mandados</h2>
-      <button class="btn secundario" id="btn-volver-historial">Volver</button>
-    </header>
-    <ul id="mandado-historial-lista">
-        </ul>
-  </section>
-
-  <section id="mandado-detalle-screen" class="screen">
-    <header>
-      <h2 id="detalle-titulo"></h2>
-      <button class="btn secundario" id="btn-volver-detalle">Volver</button>
-    </header>
-    <ul id="mandado-detalle-lista">
-        </ul>
-    <div class="total-container">
-        <span>Total del ticket:</span>
-        <span class="valor" id="detalle-total">$0.00</span>
-    </div>
-  </section>
-  
-  <section id="deudas-screen" class="screen">
-    <header>
-        <h2>Gestionar Deudas</h2>
-        <button class="btn secundario" id="btn-volver-deudas">Volver</button>
-    </header>
-    <div class="input-item">
-        <input type="text" id="deuda-nombre" placeholder="Nombre de la deuda" />
-        <input type="number" id="deuda-monto-inicial" placeholder="Monto inicial" />
-        <button class="btn" id="btn-agregar-deuda">➕ Agregar Deuda</button>
-    </div>
-    <ul id="deudas-lista">
-        </ul>
-  </section>
-
-  <section id="deuda-detalle-screen" class="screen">
-    <header>
-        <h2 id="deuda-detalle-titulo"></h2>
-        <button class="btn secundario" id="btn-volver-deuda-detalle">Volver</button>
-    </header>
-    <div class="deuda-info">
-        <span class="titulo" id="deuda-info-nombre"></span>
-        <span class="monto" id="deuda-info-pendiente"></span>
-        <div class="progress-container">
-            <div id="progress-bar" class="progress-bar-container">
-                <div class="progress-bar"></div>
-            </div>
-            <span id="progress-text" class="progress-text">0%</span>
-        </div>
-        <div class="deuda-proyeccion">
-            <div class="input-group">
-                <label for="promedio-pago-input" class="label-proyeccion">Promedio de pago: </label>
-                <input type="number" id="promedio-pago-input" placeholder="$" step="0.01" />
-            </div>
-            <div class="input-group">
-                <label for="promedio-dias-input" class="label-proyeccion">Días entre pagos: </label>
-                <input type="number" id="promedio-dias-input" placeholder="#" step="1" />
-            </div>
-            <span class="label-proyeccion">Fecha de liquidación estimada: <span class="valor-proyeccion" id="fecha-liquidación">--</span></span>
-        </div>
-        <div class="input-area" style="grid-template-columns: 1fr auto;">
-            <input type="number" id="deuda-pago-monto" placeholder="Monto a pagar" />
-            <button class="btn" id="btn-registrar-pago">✅ Pagar</button>
-        </div>
-    </div>
-    <h3>Historial de pagos</h3>
-    <ul id="pagos-lista"></ul>
-  </section>
-
-  <section id="pagos-mensuales-screen" class="screen">
-    <header>
-        <h2>Pagos mensuales</h2>
-        <button class="btn secundario" id="btn-volver-pagos-mensuales">Volver</button>
-    </header>
-    <div class="input-item">
-        <input type="text" id="pago-mensual-nombre" placeholder="Nombre del pago (ej. Telmex)" />
-        <input type="number" id="pago-mensual-monto" placeholder="Monto total del mes" />
-        <button class="btn" id="btn-agregar-pago-mensual">➕ Agregar pago</button>
-    </div>
-    <ul id="pagos-mensuales-lista">
-        </ul>
-  </section>
   
   <div id="add-category-modal" class="modal">
       <div class="modal-content">
@@ -1236,6 +1330,7 @@ body {
     // Importa las funciones que necesitas del SDKs modular
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getFirestore, collection, doc, getDoc, setDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
     // Tu configuración de la aplicación web de Firebase
     const firebaseConfig = {
@@ -1250,6 +1345,7 @@ body {
     // Inicializa Firebase
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app); // Inicializa Auth
 
     const fmt = new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" });
     const mesesLargos = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -1259,6 +1355,7 @@ body {
     let editIndex = null;
     let currentDebtId = null;
     let state = {};
+    let currentUser = null; // Variable para guardar el usuario actual
 
     const productosMandado = {
         "Frutas y Verduras": [
@@ -1351,6 +1448,16 @@ body {
         return `${mesesLargos[fecha.getMonth()]} ${fecha.getFullYear()}`;
     }
 
+    // === ELEMENTOS DEL DOM (AUTH) ===
+    const $authScreen = document.getElementById('auth-screen');
+    const $appContainer = document.getElementById('app-container');
+    const $loginForm = document.getElementById('login-form');
+    const $registerForm = document.getElementById('register-form');
+    const $showRegister = document.getElementById('show-register');
+    const $showLogin = document.getElementById('show-login');
+    const $btnLogout = document.getElementById('btn-logout');
+
+    // === ELEMENTOS DEL DOM (APP) ===
     const $saldo = document.getElementById("saldo");
     const $ahorro = document.getElementById("ahorro");
     const $gastos = document.getElementById("gastos");
@@ -1450,6 +1557,90 @@ body {
             $notificacion.style.display = "none";
         }, 2500);
     }
+
+    function resetUI() {
+        state = {};
+        $saldo.textContent = fmt.format(0);
+        $ahorro.textContent = fmt.format(0);
+        $gastos.textContent = fmt.format(0);
+        $deudasTotal.textContent = fmt.format(0);
+        $efectivoTotal.textContent = fmt.format(0);
+        $contenedorSemanas.innerHTML = "";
+        $contenedorMeses.innerHTML = "";
+        $mandadoHistorialLista.innerHTML = "";
+        $deudasLista.innerHTML = "";
+        $pagosMensualesLista.innerHTML = "";
+        if (myChart) myChart.destroy();
+        if (myLineChart) myLineChart.destroy();
+        mostrarPantalla('main-screen');
+    }
+    
+    // ===================================
+    // ===== LÓGICA DE AUTENTICACIÓN =====
+    // ===================================
+
+    onAuthStateChanged(auth, user => {
+        if (user) {
+            // Usuario ha iniciado sesión
+            currentUser = user;
+            $authScreen.classList.remove('active');
+            $appContainer.style.display = 'flex';
+            initFirestore(user.uid);
+        } else {
+            // Usuario ha cerrado sesión
+            currentUser = null;
+            $authScreen.classList.add('active');
+            $appContainer.style.display = 'none';
+            resetUI();
+        }
+    });
+
+    $loginForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+
+        signInWithEmailAndPassword(auth, email, password)
+            .catch(error => {
+                console.error("Error al iniciar sesión:", error);
+                mostrarNotificacion("Email o contraseña incorrectos.", 'error');
+            });
+    });
+
+    $registerForm.addEventListener('submit', e => {
+        e.preventDefault();
+        const email = document.getElementById('register-email').value;
+        const password = document.getElementById('register-password').value;
+
+        createUserWithEmailAndPassword(auth, email, password)
+            .catch(error => {
+                console.error("Error al registrar:", error);
+                if (error.code === 'auth/weak-password') {
+                    mostrarNotificacion("La contraseña es muy débil.", 'error');
+                } else {
+                    mostrarNotificacion("Error al crear la cuenta.", 'error');
+                }
+            });
+    });
+
+    $btnLogout.addEventListener('click', () => {
+        signOut(auth).catch(error => console.error("Error al cerrar sesión:", error));
+    });
+
+    $showRegister.addEventListener('click', () => {
+        $loginForm.style.display = 'none';
+        $registerForm.style.display = 'block';
+    });
+
+    $showLogin.addEventListener('click', () => {
+        $loginForm.style.display = 'block';
+        $registerForm.style.display = 'none';
+    });
+
+
+    // ===================================
+    // ======= LÓGICA DE LA APP ==========
+    // ===================================
     
     function actualizarCategorias() {
         const tiposExistentes = ["Sueldo", "Depósito", "Ahorro", "Mandado", "Efectivo", "Tienda", "Corning", "Didi", "iCloud", "Coppel", "Otros"];
@@ -1522,8 +1713,9 @@ body {
         return gastosSemanales;
     }
 
-    async function initFirestore() {
-      const docRef = doc(db, "finanzas", "estado_principal");
+    async function initFirestore(userId) {
+      // AQUÍ ESTÁ EL CAMBIO CLAVE: la ruta ahora incluye el ID del usuario
+      const docRef = doc(db, "users", userId, "finanzas", "estado_principal");
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
         state = { saldo: 0, ahorro: 0, gastos: 0, efectivo: 0, deudas: [], registros: [], mandadoTickets: [], ultimaCorte: null, customCategories: [], customEfectivoCategories: [], pagosMensuales: [] };
@@ -1551,11 +1743,18 @@ body {
       renderResumen();
       renderHistorial();
       renderHistorialEfectivo();
+      renderListaDeudas();
+      renderPagosMensualesList();
     }
     
     async function persist() {
+        if (!currentUser) {
+            console.error("Intento de persistir sin usuario logueado.");
+            return;
+        }
         state.deudasTotal = calcularDeudasTotal();
-        const docRef = doc(db, "finanzas", "estado_principal");
+        // AQUÍ ESTÁ EL CAMBIO CLAVE: la ruta ahora incluye el ID del usuario
+        const docRef = doc(db, "users", currentUser.uid, "finanzas", "estado_principal");
         const stateToSave = { 
             ...state, 
             registros: state.registros.map(r => ({ ...r, ts: Timestamp.fromMillis(r.ts) })),
@@ -2071,7 +2270,7 @@ body {
 
     function mostrarPantalla(id) {
         document.querySelectorAll('.screen').forEach(s => {
-            s.classList.remove('active');
+            if(s.id !== 'auth-screen') s.classList.remove('active');
         });
         document.getElementById(id).classList.add('active');
         
@@ -2772,8 +2971,6 @@ body {
             eliminarRegistro(parseInt(deleteRegistroBtn.dataset.id));
         }
     });
-
-    initFirestore();
 
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
